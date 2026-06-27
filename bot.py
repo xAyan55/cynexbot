@@ -73,6 +73,10 @@ class CynexCloudBot(commands.Bot):
         await self.load_extension("suggestions")
         await self.load_extension("welcome")
         await self.load_extension("dashboard")
+        await self.load_extension("moderation")
+        await self.load_extension("invites")
+        await self.load_extension("boosts")
+        await self.load_extension("activity")
         
         await self.tree.sync()
         logger.info("Command tree synced globally.")
@@ -127,6 +131,137 @@ async def init_db():
                 published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        
+        # 1. Anti-Swear System Tables
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS antiswear_settings (
+                guild_id TEXT PRIMARY KEY,
+                enabled INTEGER DEFAULT 0,
+                max_warnings INTEGER DEFAULT 3,
+                timeout_duration INTEGER DEFAULT 600,
+                use_regex INTEGER DEFAULT 0
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS antiswear_words (
+                guild_id TEXT,
+                word TEXT,
+                PRIMARY KEY (guild_id, word)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS antiswear_roles (
+                guild_id TEXT,
+                role_id TEXT,
+                PRIMARY KEY (guild_id, role_id)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS antiswear_channels (
+                guild_id TEXT,
+                channel_id TEXT,
+                PRIMARY KEY (guild_id, channel_id)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS antiswear_warnings (
+                guild_id TEXT,
+                user_id TEXT,
+                warning_count INTEGER DEFAULT 0,
+                last_warned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (guild_id, user_id)
+            )
+        """)
+
+        # 2. Boost Alerts / Tracking Tables
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS boost_alert_configs (
+                guild_id TEXT PRIMARY KEY,
+                channel_id TEXT,
+                role_id TEXT,
+                highest_tier INTEGER DEFAULT 0
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS boost_track (
+                guild_id TEXT,
+                user_id TEXT,
+                first_boost_date TIMESTAMP,
+                total_boosts INTEGER DEFAULT 0,
+                is_boosting INTEGER DEFAULT 0,
+                PRIMARY KEY (guild_id, user_id)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS boost_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                guild_id TEXT,
+                user_id TEXT,
+                action TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # 3. Invite Tracking Tables
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS invite_stats (
+                guild_id TEXT,
+                user_id TEXT,
+                total INTEGER DEFAULT 0,
+                regular INTEGER DEFAULT 0,
+                fake INTEGER DEFAULT 0,
+                left INTEGER DEFAULT 0,
+                bonus INTEGER DEFAULT 0,
+                PRIMARY KEY (guild_id, user_id)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS invited_by (
+                guild_id TEXT,
+                invited_user_id TEXT,
+                inviter_user_id TEXT,
+                invite_code TEXT,
+                status TEXT,
+                PRIMARY KEY (guild_id, invited_user_id)
+            )
+        """)
+
+        # 4. Message Tracking Tables
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS message_settings (
+                guild_id TEXT PRIMARY KEY,
+                ignore_bots INTEGER DEFAULT 1
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS message_activity (
+                guild_id TEXT,
+                user_id TEXT,
+                total_messages INTEGER DEFAULT 0,
+                attachments_count INTEGER DEFAULT 0,
+                images_count INTEGER DEFAULT 0,
+                links_count INTEGER DEFAULT 0,
+                voice_messages_count INTEGER DEFAULT 0,
+                last_active_date TEXT,
+                PRIMARY KEY (guild_id, user_id)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS message_daily_stats (
+                guild_id TEXT,
+                user_id TEXT,
+                date TEXT,
+                count INTEGER DEFAULT 0,
+                PRIMARY KEY (guild_id, user_id, date)
+            )
+        """)
+
+        # Performance Indexes
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_msg_activity_guild_total ON message_activity (guild_id, total_messages DESC)")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_msg_daily_guild_date ON message_daily_stats (guild_id, date)")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_invite_stats_guild_total ON invite_stats (guild_id, total DESC)")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_boost_track_guild_boosting ON boost_track (guild_id, is_boosting DESC)")
+
         await db.commit()
     logger.info("Database initialized successfully.")
 
