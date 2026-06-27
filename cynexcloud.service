@@ -1,0 +1,20 @@
+[Unit]
+Description=CynexCloud Discord Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root
+ExecStart=/usr/bin/python3 bot.py
+Restart=always
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=cynexcloud-bot
+
+# Ensure the process restarts if it exits unexpectedly
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
