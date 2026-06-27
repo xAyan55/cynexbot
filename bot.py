@@ -77,6 +77,7 @@ class CynexCloudBot(commands.Bot):
         await self.load_extension("invites")
         await self.load_extension("boosts")
         await self.load_extension("activity")
+        await self.load_extension("reactionroles")
         
         await self.tree.sync()
         logger.info("Command tree synced globally.")
@@ -261,6 +262,28 @@ async def init_db():
         await db.execute("CREATE INDEX IF NOT EXISTS idx_msg_daily_guild_date ON message_daily_stats (guild_id, date)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_invite_stats_guild_total ON invite_stats (guild_id, total DESC)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_boost_track_guild_boosting ON boost_track (guild_id, is_boosting DESC)")
+
+        # 5. Reaction Roles Tables
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS reaction_roles (
+                guild_id TEXT,
+                message_id TEXT,
+                emoji TEXT,
+                role_id TEXT,
+                PRIMARY KEY (guild_id, message_id, emoji)
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS reaction_role_panels (
+                guild_id TEXT,
+                message_id TEXT,
+                channel_id TEXT,
+                title TEXT,
+                description TEXT,
+                multi_role INTEGER DEFAULT 1,
+                PRIMARY KEY (guild_id, message_id)
+            )
+        """)
 
         await db.commit()
     logger.info("Database initialized successfully.")
