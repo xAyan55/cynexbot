@@ -1073,15 +1073,28 @@ class TicketPanelBuilderView(discord.ui.View):
                 color=discord.Color.green()
             )
             
-            cats = ", ".join([c['name'] for c in self.config['categories']]) or "None"
+            cats_raw = ", ".join([c['name'] for c in self.config['categories']]) or "None"
+            desc_val = self.config['description']
+            if len(desc_val) > 250:
+                desc_val = desc_val[:247] + "..."
+            cats_val = cats_raw
+            if len(cats_val) > 250:
+                cats_val = cats_val[:247] + "..."
+            img_val = self.config['image_url'] or 'None'
+            if len(img_val) > 150:
+                img_val = img_val[:147] + "..."
+            thumb_val = self.config['thumbnail_url'] or 'None'
+            if len(thumb_val) > 150:
+                thumb_val = thumb_val[:147] + "..."
+                
             embed.add_field(
                 name="📋 Panel Settings",
                 value=f"• **Title:** `{self.config['title']}`\n"
-                      f"• **Description:** `{self.config['description']}`\n"
+                      f"• **Description:** `{desc_val}`\n"
                       f"• **Accent Color:** `{self.config['accent_color']}`\n"
-                      f"• **Categories:** `{cats}`\n"
-                      f"• **Image URL:** `{self.config['image_url'] or 'None'}`\n"
-                      f"• **Thumbnail URL:** `{self.config['thumbnail_url'] or 'None'}`",
+                      f"• **Categories:** `{cats_val}`\n"
+                      f"• **Image URL:** `{img_val}`\n"
+                      f"• **Thumbnail URL:** `{thumb_val}`",
                 inline=False
             )
             

@@ -218,7 +218,7 @@ class Moderation(commands.Cog):
                     ON CONFLICT(guild_id, user_id) DO UPDATE SET
                     warning_count = warning_count + 1,
                     last_warned_at = CURRENT_TIMESTAMP
-                """)
+                """, (guild_id, user_id))
                 await db.commit()
 
                 async with db.execute("SELECT warning_count FROM antiswear_warnings WHERE guild_id = ? AND user_id = ?", (guild_id, user_id)) as cursor:
@@ -309,7 +309,7 @@ class Moderation(commands.Cog):
             await db.execute("""
                 INSERT INTO antiswear_settings (guild_id, enabled) VALUES (?, 1)
                 ON CONFLICT(guild_id) DO UPDATE SET enabled = 1
-            """)
+            """, (guild_id,))
             await db.commit()
         cache.invalidate(guild_id)
 
@@ -324,7 +324,7 @@ class Moderation(commands.Cog):
             await db.execute("""
                 INSERT INTO antiswear_settings (guild_id, enabled) VALUES (?, 0)
                 ON CONFLICT(guild_id) DO UPDATE SET enabled = 0
-            """)
+            """, (guild_id,))
             await db.commit()
         cache.invalidate(guild_id)
 
