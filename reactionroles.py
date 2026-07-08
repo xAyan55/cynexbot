@@ -14,7 +14,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.ReactionRoles")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # HELPER FOR EMBED DESCRIPTION REBUILDING

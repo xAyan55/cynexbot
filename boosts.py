@@ -16,7 +16,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.BoostTracker")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # DATABASE OPERATIONS FOR BOOSTS

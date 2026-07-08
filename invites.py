@@ -15,7 +15,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.InviteTracker")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # COG IMPLEMENTATION

@@ -17,7 +17,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.Dashboard")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 class Dashboard(commands.Cog):
     def __init__(self, bot: commands.Bot):

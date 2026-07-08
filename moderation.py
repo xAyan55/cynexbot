@@ -16,7 +16,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.AntiSwear")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # DATABASE UTILITIES & CACHING FOR ANTI-SWEAR

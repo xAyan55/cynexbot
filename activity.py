@@ -16,7 +16,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.MessageTracker")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # MEMORY BUFFER FOR WRITES BATCHING

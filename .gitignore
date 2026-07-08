@@ -6,3 +6,5 @@ __pycache__/
 .vscode/
 .idea/
 token.txt
+node_modules/
+scratch/

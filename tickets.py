@@ -25,14 +25,14 @@ from discord.ui import (
 from discord import MediaGalleryItem, SeparatorSpacing
 
 logger = logging.getLogger("CynexCloud.Tickets")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # DATABASE SCHEMAS & INITIALIZATION
 # ══════════════════════════════════════════════════════════════════════
 
 async def init_ticket_db():
-    """Initializes SQLite tables in fb.db if they do not exist."""
+    """Initializes SQLite tables in cynex.db if they do not exist."""
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL")
         # Support tickets table (with claimed and sequential number indexing)

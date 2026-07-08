@@ -43,14 +43,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger("CynexCloud")
 
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 class CynexCloudBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True  # Required to capture message transcripts
         intents.members = True          # Required for welcome system events
-        super().__init__(command_prefix="fb!", intents=intents)
+        super().__init__(command_prefix="cynex!", intents=intents)
         self.start_time = datetime.now()
 
     async def setup_hook(self):
@@ -85,11 +85,11 @@ class CynexCloudBot(commands.Bot):
 bot = CynexCloudBot()
 
 # ══════════════════════════════════════════════════════════════════════
-# DATABASE OPERATIONS (fb.db)
+# DATABASE OPERATIONS (cynex.db)
 # ══════════════════════════════════════════════════════════════════════
 
 async def init_db():
-    """Initializes SQLite tables in fb.db if they do not exist."""
+    """Initializes SQLite tables in cynex.db if they do not exist."""
     import aiosqlite
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL")
@@ -499,7 +499,7 @@ def generate_tree_view(components: List[dict], container_props: dict) -> str:
         elif comp_type == 'action_row':
             row_node = {"name": "Action Row", "children": []}
             for btn in comp.get('buttons', []):
-                row_node["children"].append({"name": f"Button ({btn.get('style', 'primary').title()}): \"{btn.get('label', '')}\"", "children": []})
+                row_node["children"].append({"name": f"Button ({btn.get('style', 'secondary').title()}): \"{btn.get('label', '')}\"", "children": []})
             current_container["children"].append(row_node)
         elif comp_type == 'file':
             url_or_id = comp.get('url_or_id', '')
@@ -598,12 +598,10 @@ async def render_v2_layout(user_id: str, components: List[dict], container_props
             
             accessory = None
             if acc_type == 'button':
-                style_str = comp.get('accessory_style', 'primary')
-                style = getattr(discord.ButtonStyle, style_str, discord.ButtonStyle.secondary)
                 if acc_url:
                     accessory = Button(label=acc_label, style=discord.ButtonStyle.link, url=acc_url)
                 else:
-                    accessory = Button(label=acc_label, style=style, custom_id=f"published_sec_btn_{idx}")
+                    accessory = Button(label=acc_label, style=discord.ButtonStyle.secondary, custom_id=f"published_sec_btn_{idx}")
             elif acc_type == 'thumbnail' and acc_url:
                 accessory = Thumbnail(acc_url)
             else:
@@ -633,16 +631,12 @@ async def render_v2_layout(user_id: str, components: List[dict], container_props
             buttons = []
             for b_idx, btn in enumerate(comp.get('buttons', [])):
                 label = btn.get('label', 'Button')
-                style_str = btn.get('style', 'primary')
                 url = btn.get('url')
-                style = getattr(discord.ButtonStyle, style_str, discord.ButtonStyle.secondary)
                 
-                if style_str == 'link' and url:
-                    buttons.append(Button(label=label, style=discord.ButtonStyle.link, url=url))
-                elif url:
+                if url:
                     buttons.append(Button(label=label, style=discord.ButtonStyle.link, url=url))
                 else:
-                    buttons.append(Button(label=label, style=style, custom_id=f"published_act_btn_{idx}_{b_idx}"))
+                    buttons.append(Button(label=label, style=discord.ButtonStyle.secondary, custom_id=f"published_act_btn_{idx}_{b_idx}"))
             if buttons:
                 current_container.add_item(ActionRow(*buttons))
                 
@@ -888,7 +882,7 @@ class ActionRowModal(discord.ui.Modal, title="Configure Action Row"):
     buttons_def = discord.ui.TextInput(
         label="Buttons (Format: Label | Style | URL)",
         style=discord.TextStyle.paragraph,
-        placeholder="Submit | success\nGoogle | link | https://google.com\nCancel | danger",
+        placeholder="Submit | secondary\nGoogle | link | https://google.com\nCancel | secondary",
         required=True
     )
     
@@ -915,11 +909,11 @@ class ActionRowModal(discord.ui.Modal, title="Configure Action Row"):
                 continue
             parts = [p.strip() for p in line.split('|')]
             label = parts[0]
-            style_str = parts[1].lower() if len(parts) > 1 else 'primary'
+            style_str = parts[1].lower() if len(parts) > 1 else 'secondary'
             url = parts[2] if len(parts) > 2 else None
             
-            if style_str not in ('primary', 'secondary', 'success', 'danger', 'link'):
-                style_str = 'primary'
+            if style_str != 'link':
+                style_str = 'secondary'
                 
             buttons.append({
                 "label": label,

@@ -29,7 +29,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.Reviews")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # REVIEW SUBMISSION MODALS

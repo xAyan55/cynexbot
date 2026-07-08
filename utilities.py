@@ -35,7 +35,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.Utilities")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # UTILITY DATABASE LOGGER HELPER

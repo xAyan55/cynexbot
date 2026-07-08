@@ -28,7 +28,7 @@ from ui import (
 )
 
 logger = logging.getLogger("CynexCloud.Welcome")
-DB_PATH = "fb.db"
+DB_PATH = "cynex.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # WELCOME VARIABLE HELPER
