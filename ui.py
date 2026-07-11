@@ -131,19 +131,17 @@ class BreezePaginationContainer(LayoutView):
             if interaction.user.id != self.user_id:
                 await interaction.response.send_message("❌ You are not authorized to paginate this view.", ephemeral=True)
                 return
-            await interaction.response.defer()
             self.current_page -= 1
             self.update_layout()
-            await interaction.message.edit(view=self)
+            await interaction.response.edit_message(view=self)
 
         async def next_callback(interaction: discord.Interaction):
             if interaction.user.id != self.user_id:
                 await interaction.response.send_message("❌ You are not authorized to paginate this view.", ephemeral=True)
                 return
-            await interaction.response.defer()
             self.current_page += 1
             self.update_layout()
-            await interaction.message.edit(view=self)
+            await interaction.response.edit_message(view=self)
 
         prev_btn.callback = prev_callback
         next_btn.callback = next_callback
