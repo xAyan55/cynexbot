@@ -8,15 +8,15 @@ from discord import app_commands
 from discord.ext import commands
 
 from ui import (
-    CynexCloudSuccessContainer,
-    CynexCloudErrorContainer,
-    CynexCloudInfoContainer,
-    CynexCloudWarningContainer,
-    CynexCloudPaginationContainer
+    BreezeSuccessContainer,
+    BreezeErrorContainer,
+    BreezeInfoContainer,
+    BreezeWarningContainer,
+    BreezePaginationContainer
 )
 
-logger = logging.getLogger("CynexCloud.BoostTracker")
-DB_PATH = "cynex.db"
+logger = logging.getLogger("Breeze.BoostTracker")
+DB_PATH = "breeze.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # DATABASE OPERATIONS FOR BOOSTS
@@ -75,7 +75,7 @@ class BoostTracker(commands.Cog):
                 # Send announcement
                 ch = guild.get_channel(int(config["channel_id"])) if config["channel_id"] else None
                 if ch:
-                    alert = CynexCloudInfoContainer(
+                    alert = BreezeInfoContainer(
                         "🎉 Server Boosted!",
                         f"Thank you so much to {after.mention} for boosting our server! ❤️\n"
                         f"We now have **{guild.premium_subscription_count}** boosts!"
@@ -90,7 +90,7 @@ class BoostTracker(commands.Cog):
                     role = guild.get_role(int(config["role_id"]))
                     if role and guild.me.guild_permissions.manage_roles and role < guild.me.top_role:
                         try:
-                            await after.add_roles(role, reason="CynexCloud Booster Alert thank-you assignment")
+                            await after.add_roles(role, reason="Breeze Booster Alert thank-you assignment")
                         except Exception as e:
                             logger.error(f"[BoostTracker] Failed to add thank-you role {role.id} to booster {user_id}: {e}")
 
@@ -111,7 +111,7 @@ class BoostTracker(commands.Cog):
             if config:
                 ch = guild.get_channel(int(config["channel_id"])) if config["channel_id"] else None
                 if ch:
-                    alert = CynexCloudWarningContainer(
+                    alert = BreezeWarningContainer(
                         "💔 Server Boost Removed",
                         f"{after.mention} is no longer boosting. We now have **{guild.premium_subscription_count}** boosts."
                     )
@@ -125,7 +125,7 @@ class BoostTracker(commands.Cog):
                     role = guild.get_role(int(config["role_id"]))
                     if role and guild.me.guild_permissions.manage_roles and role < guild.me.top_role:
                         try:
-                            await after.remove_roles(role, reason="CynexCloud Booster Alert thank-you removal")
+                            await after.remove_roles(role, reason="Breeze Booster Alert thank-you removal")
                         except Exception as e:
                             logger.error(f"[BoostTracker] Failed to remove thank-you role {role.id} from former booster {user_id}: {e}")
 
@@ -152,7 +152,7 @@ class BoostTracker(commands.Cog):
 
                     ch = after.get_channel(int(config["channel_id"])) if config["channel_id"] else None
                     if ch:
-                        alert = CynexCloudSuccessContainer(
+                        alert = BreezeSuccessContainer(
                             "🚀 Server Tier Upgraded!",
                             f"Congratulations! Our server premium tier has upgraded to **Level {after.premium_tier}**!\n"
                             f"We currently have **{after.premium_subscription_count}** total boosts!\n"
@@ -167,7 +167,7 @@ class BoostTracker(commands.Cog):
                 elif after.premium_tier < before.premium_tier:
                     ch = after.get_channel(int(config["channel_id"])) if config["channel_id"] else None
                     if ch:
-                        alert = CynexCloudWarningContainer(
+                        alert = BreezeWarningContainer(
                             "⚠️ Server Tier Downgraded",
                             f"Our server premium tier has dropped to **Level {after.premium_tier}** due to a boost removal.\n"
                             f"We currently have **{after.premium_subscription_count}** boosts remaining."
@@ -188,7 +188,7 @@ class BoostTracker(commands.Cog):
     # SLASH COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    boostalerts = app_commands.Group(name="boostalerts", description="CynexCloud Server Boost Alert Settings", default_permissions=discord.Permissions(administrator=True))
+    boostalerts = app_commands.Group(name="boostalerts", description="Breeze Server Boost Alert Settings", default_permissions=discord.Permissions(administrator=True))
 
     @boostalerts.command(name="setup", description="Configure server boost announcements channel and thank-you role")
     async def boostalerts_setup(self, interaction: discord.Interaction, channel: discord.TextChannel, role: Optional[discord.Role] = None):
@@ -199,11 +199,11 @@ class BoostTracker(commands.Cog):
         # Validate bot manage roles permission if role is specified
         if role:
             if not interaction.guild.me.guild_permissions.manage_roles:
-                card = CynexCloudErrorContainer("Missing Bot Permissions", "❌ CynexCloud requires **Manage Roles** permission to assign the thank-you role.")
+                card = BreezeErrorContainer("Missing Bot Permissions", "❌ Breeze requires **Manage Roles** permission to assign the thank-you role.")
                 await interaction.followup.send(view=card.build(), ephemeral=True)
                 return
             if role >= interaction.guild.me.top_role:
-                card = CynexCloudErrorContainer("Invalid Role", f"❌ Role {role.mention} is higher than CynexCloud's highest role. Please move CynexCloud's role above it in Server Settings.")
+                card = BreezeErrorContainer("Invalid Role", f"❌ Role {role.mention} is higher than Breeze's highest role. Please move Breeze's role above it in Server Settings.")
                 await interaction.followup.send(view=card.build(), ephemeral=True)
                 return
 
@@ -218,7 +218,7 @@ class BoostTracker(commands.Cog):
             await db.commit()
 
         role_mention = role.mention if role else "`None`"
-        card = CynexCloudSuccessContainer(
+        card = BreezeSuccessContainer(
             "Boost Alerts Configured",
             f"Announcements will be posted to {channel.mention}.\n"
             f"Thank-you role to assign: {role_mention}"
@@ -234,10 +234,10 @@ class BoostTracker(commands.Cog):
             await db.execute("DELETE FROM boost_alert_configs WHERE guild_id = ?", (guild_id,))
             await db.commit()
 
-        card = CynexCloudSuccessContainer("Boost Alerts Disabled", "Server boost alert announcements have been successfully **disabled**.")
+        card = BreezeSuccessContainer("Boost Alerts Disabled", "Server boost alert announcements have been successfully **disabled**.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
-    boost = app_commands.Group(name="boost", description="CynexCloud Server Booster stats and records")
+    boost = app_commands.Group(name="boost", description="Breeze Server Booster stats and records")
 
     @boost.command(name="stats", description="Display current guild server boost tier, counts, and stats")
     async def boost_stats(self, interaction: discord.Interaction):
@@ -265,7 +265,7 @@ class BoostTracker(commands.Cog):
             f"• **Active Boosters Count**: `{active_boosters}` members\n"
             f"• **Total Historical Boosters**: `{total_historical_boosters}` members"
         )
-        card = CynexCloudInfoContainer(f"Boost Statistics for {guild.name}", desc)
+        card = BreezeInfoContainer(f"Boost Statistics for {guild.name}", desc)
         await interaction.followup.send(view=card.build())
 
     @boost.command(name="leaderboard", description="Display leaderboard of top boosters sorted by boost duration")
@@ -284,7 +284,7 @@ class BoostTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = CynexCloudInfoContainer("Booster Leaderboard", "*There are currently no active boosters logged on this server.*")
+            card = BreezeInfoContainer("Booster Leaderboard", "*There are currently no active boosters logged on this server.*")
             await interaction.followup.send(view=card.build())
             return
 
@@ -315,7 +315,7 @@ class BoostTracker(commands.Cog):
         if lines:
             pages.append("\n".join(lines))
 
-        paginator = CynexCloudPaginationContainer("Server Booster Leaderboard", pages, interaction.user.id)
+        paginator = BreezePaginationContainer("Server Booster Leaderboard", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)
 
     @boost.command(name="history", description="Check server boost actions history for a specific member")
@@ -335,7 +335,7 @@ class BoostTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = CynexCloudInfoContainer("Booster History", f"No boost activity logs found for {member.name}.")
+            card = BreezeInfoContainer("Booster History", f"No boost activity logs found for {member.name}.")
             await interaction.followup.send(view=card.build())
             return
 
@@ -353,7 +353,7 @@ class BoostTracker(commands.Cog):
             lines.append(f"{emoji} **{action_text}** — {time_str}")
 
         desc = "\n".join(lines)
-        card = CynexCloudInfoContainer(f"Boost History for {member.name}", desc)
+        card = BreezeInfoContainer(f"Boost History for {member.name}", desc)
         await interaction.followup.send(view=card.build())
 
 async def setup(bot: commands.Bot):

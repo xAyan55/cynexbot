@@ -20,16 +20,16 @@ from discord.ui import (
 
 import ui
 from ui import (
-    CynexCloudSuccessContainer,
-    CynexCloudErrorContainer,
-    CynexCloudWarningContainer,
-    CynexCloudInfoContainer,
-    CynexCloudPaginationContainer,
-    CynexCloudContainerBuilder
+    BreezeSuccessContainer,
+    BreezeErrorContainer,
+    BreezeWarningContainer,
+    BreezeInfoContainer,
+    BreezePaginationContainer,
+    BreezeContainerBuilder
 )
 
-logger = logging.getLogger("CynexCloud.Suggestions")
-DB_PATH = "cynex.db"
+logger = logging.getLogger("Breeze.Suggestions")
+DB_PATH = "breeze.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # SUGGESTION MODAL FORM
@@ -77,7 +77,7 @@ class SuggestionSubmitModal(discord.ui.Modal, title="Submit a Suggestion"):
                     try:
                         dt = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S')
                         if (now - dt).total_seconds() < 3600:
-                            warn = CynexCloudWarningContainer("Duplicate Suggestion Detected", "You have already submitted a suggestion with this title in the last hour.")
+                            warn = BreezeWarningContainer("Duplicate Suggestion Detected", "You have already submitted a suggestion with this title in the last hour.")
                             await interaction.followup.send(view=warn.build(), ephemeral=True)
                             return
                     except Exception:
@@ -115,7 +115,7 @@ class SuggestionSubmitModal(discord.ui.Modal, title="Submit a Suggestion"):
         if suggest_channel:
             try:
                 # Build V2 Container (Approved - Green)
-                pub_layout = CynexCloudContainerBuilder(f"Suggestion: {title_text}", accent_color=3066993) # Green
+                pub_layout = BreezeContainerBuilder(f"Suggestion: {title_text}", accent_color=3066993) # Green
                 pub_layout.add_section("Category", f"`{self.category}`")
                 pub_layout.add_section("Description", desc_text)
                 pub_layout.add_section("Status", "🟢 **Approved**")
@@ -123,9 +123,9 @@ class SuggestionSubmitModal(discord.ui.Modal, title="Submit a Suggestion"):
                 pub_layout.add_section("Suggestion ID", f"`{suggestion_id}`")
                 
                 # Upvote / Downvote buttons with initial counts 0
-                btn_up = Button(label="👍 Upvote (0)", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:vote:up:{suggestion_id}")
-                btn_down = Button(label="👎 Downvote (0)", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:vote:down:{suggestion_id}")
-                btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:stats:{suggestion_id}")
+                btn_up = Button(label="👍 Upvote (0)", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:vote:up:{suggestion_id}")
+                btn_down = Button(label="👎 Downvote (0)", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:vote:down:{suggestion_id}")
+                btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:stats:{suggestion_id}")
                 pub_layout.add_buttons(btn_up, btn_down, btn_stats)
                 
                 msg = await suggest_channel.send(view=pub_layout.build())
@@ -141,7 +141,7 @@ class SuggestionSubmitModal(discord.ui.Modal, title="Submit a Suggestion"):
             except Exception as pub_err:
                 logger.warning(f"Failed to post suggestion or create thread: {pub_err}")
 
-        success = CynexCloudSuccessContainer("Suggestion Submitted", f"Your suggestion `{suggestion_id}` has been published to {suggest_channel.mention if suggest_channel else 'the suggestion channel'}.")
+        success = BreezeSuccessContainer("Suggestion Submitted", f"Your suggestion `{suggestion_id}` has been published to {suggest_channel.mention if suggest_channel else 'the suggestion channel'}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -208,7 +208,7 @@ class Suggestions(commands.Cog):
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
         custom_id = interaction.data.get("custom_id") if interaction.data else None
-        if not custom_id or not custom_id.startswith("cynexcloud:suggest:"):
+        if not custom_id or not custom_id.startswith("breeze:suggest:"):
             return
 
         parts = custom_id.split(":")
@@ -228,19 +228,19 @@ class Suggestions(commands.Cog):
                     status_row = await cursor.fetchone()
                     
                 if not status_row:
-                    err = CynexCloudErrorContainer("Suggestion Missing", "The suggestion data could not be found.")
+                    err = BreezeErrorContainer("Suggestion Missing", "The suggestion data could not be found.")
                     await interaction.followup.send(view=err.build(), ephemeral=True)
                     return
                     
                 status, author_id = status_row
                 if status in ("implemented", "denied"):
-                    err = CynexCloudErrorContainer("Voting Closed", "This suggestion is already implemented or denied. Voting is disabled.")
+                    err = BreezeErrorContainer("Voting Closed", "This suggestion is already implemented or denied. Voting is disabled.")
                     await interaction.followup.send(view=err.build(), ephemeral=True)
                     return
 
                 # Prevent self-voting
                 if author_id == user_id:
-                    err = CynexCloudErrorContainer("Self Voting Blocked", "You cannot vote on your own suggestions.")
+                    err = BreezeErrorContainer("Self Voting Blocked", "You cannot vote on your own suggestions.")
                     await interaction.followup.send(view=err.build(), ephemeral=True)
                     return
 
@@ -304,7 +304,7 @@ class Suggestions(commands.Cog):
                     else:
                         badge = "⏳ **Pending Moderation**"
                         
-                    pub_layout = CynexCloudContainerBuilder(f"Suggestion: {title}", accent_color=accent_col)
+                    pub_layout = BreezeContainerBuilder(f"Suggestion: {title}", accent_color=accent_col)
                     pub_layout.add_section("Category", f"`{category}`")
                     pub_layout.add_section("Description", desc)
                     pub_layout.add_section("Status", badge)
@@ -313,16 +313,16 @@ class Suggestions(commands.Cog):
                     pub_layout.add_section("Author", "Anonymous" if anon else f"<@{author_uid}>")
                     pub_layout.add_section("Suggestion ID", f"`{suggestion_id}`")
                     
-                    btn_up = Button(label=f"👍 Upvote ({upvotes})", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:vote:up:{suggestion_id}")
-                    btn_down = Button(label=f"👎 Downvote ({downvotes})", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:vote:down:{suggestion_id}")
-                    btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:stats:{suggestion_id}")
+                    btn_up = Button(label=f"👍 Upvote ({upvotes})", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:vote:up:{suggestion_id}")
+                    btn_down = Button(label=f"👎 Downvote ({downvotes})", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:vote:down:{suggestion_id}")
+                    btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:stats:{suggestion_id}")
                     pub_layout.add_buttons(btn_up, btn_down, btn_stats)
                     
                     await message.edit(view=pub_layout.build())
             except Exception as edit_err:
                 logger.warning(f"Failed to edit suggestion votes button: {edit_err}")
 
-            success = CynexCloudSuccessContainer("Vote Confirmed", f"Your vote has been successfully {msg_action}.")
+            success = BreezeSuccessContainer("Vote Confirmed", f"Your vote has been successfully {msg_action}.")
             await interaction.followup.send(view=success.build(), ephemeral=True)
 
         # Stats view flow
@@ -344,7 +344,7 @@ class Suggestions(commands.Cog):
                     down_row = await cursor.fetchone()
                     down = down_row[0] if down_row else 0
 
-            info = CynexCloudInfoContainer(f"Suggestion Statistics - {suggestion_id}", f"Real-time voting analytical tallies.")
+            info = BreezeInfoContainer(f"Suggestion Statistics - {suggestion_id}", f"Real-time voting analytical tallies.")
             info.add_section("Total Votes Cast", f"`{total_votes}` votes")
             info.add_section("Net Score", f"`{net_score:+d}`")
             info.add_section("Breakdown", f"👍 Upvotes: `{up}`\n👎 Downvotes: `{down}`")
@@ -371,14 +371,14 @@ class Suggestions(commands.Cog):
         guild_id = str(interaction.guild.id)
         settings = await self.get_settings(guild_id)
         if not settings or not settings["suggest_channel_id"]:
-            err = CynexCloudErrorContainer("Configuration Error", "Suggestions are not set up on this server yet. Ask an administrator to run `/suggestion setup`.")
+            err = BreezeErrorContainer("Configuration Error", "Suggestions are not set up on this server yet. Ask an administrator to run `/suggestion setup`.")
             await interaction.response.send_message(view=err.build(), ephemeral=True)
             return
 
         # Modal must be sent directly
         await interaction.response.send_modal(SuggestionSubmitModal(category, anonymous, settings))
 
-    suggestion_group = app_commands.Group(name="suggestion", description="CynexCloud suggestion management panel")
+    suggestion_group = app_commands.Group(name="suggestion", description="Breeze suggestion management panel")
 
     @suggestion_group.command(name="setup", description="Configure suggestion systems")
     @app_commands.describe(channel="Target text channel for suggestions posting")
@@ -394,7 +394,7 @@ class Suggestions(commands.Cog):
             )
             await db.commit()
 
-        success = CynexCloudSuccessContainer("Suggestions Setup Completed", f"Suggestions will be posted to {channel.mention}.")
+        success = BreezeSuccessContainer("Suggestions Setup Completed", f"Suggestions will be posted to {channel.mention}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @suggestion_group.command(name="approve", description="Approve a suggestion and create a discussion thread")
@@ -409,13 +409,13 @@ class Suggestions(commands.Cog):
                 row = await cursor.fetchone()
 
         if not row:
-            err = CynexCloudErrorContainer("Suggestion Not Found", f"Suggestion `{suggestion_id}` is missing.")
+            err = BreezeErrorContainer("Suggestion Not Found", f"Suggestion `{suggestion_id}` is missing.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
         status, title, desc, category, anon, author_uid = row
         if status != "pending":
-            warn = CynexCloudWarningContainer("Already Moderated", f"Suggestion `{suggestion_id}` status is already `{status}`.")
+            warn = BreezeWarningContainer("Already Moderated", f"Suggestion `{suggestion_id}` status is already `{status}`.")
             await interaction.followup.send(view=warn.build(), ephemeral=True)
             return
 
@@ -466,7 +466,7 @@ class Suggestions(commands.Cog):
                         if target_msg:
                             break
 
-                    pub_layout = CynexCloudContainerBuilder(f"Suggestion: {title}", accent_color=3066993) # Green
+                    pub_layout = BreezeContainerBuilder(f"Suggestion: {title}", accent_color=3066993) # Green
                     pub_layout.add_section("Category", f"`{category}`")
                     pub_layout.add_section("Description", desc)
                     pub_layout.add_section("Status", "🟢 **Approved**")
@@ -474,9 +474,9 @@ class Suggestions(commands.Cog):
                     pub_layout.add_section("Author", "Anonymous" if anon else f"<@{author_uid}>")
                     pub_layout.add_section("Suggestion ID", f"`{suggestion_id}`")
                     
-                    btn_up = Button(label=f"👍 Upvote ({up})", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:vote:up:{suggestion_id}")
-                    btn_down = Button(label=f"👎 Downvote ({down})", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:vote:down:{suggestion_id}")
-                    btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:stats:{suggestion_id}")
+                    btn_up = Button(label=f"👍 Upvote ({up})", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:vote:up:{suggestion_id}")
+                    btn_down = Button(label=f"👎 Downvote ({down})", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:vote:down:{suggestion_id}")
+                    btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:stats:{suggestion_id}")
                     pub_layout.add_buttons(btn_up, btn_down, btn_stats)
 
                     if target_msg:
@@ -494,7 +494,7 @@ class Suggestions(commands.Cog):
                 except Exception as thread_err:
                     logger.warning(f"Failed to create suggestion thread: {thread_err}")
 
-        success = CynexCloudSuccessContainer("Suggestion Approved", f"Suggestion `{suggestion_id}` approved successfully.")
+        success = BreezeSuccessContainer("Suggestion Approved", f"Suggestion `{suggestion_id}` approved successfully.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @suggestion_group.command(name="deny", description="Deny a pending suggestion")
@@ -509,13 +509,13 @@ class Suggestions(commands.Cog):
                 row = await cursor.fetchone()
 
         if not row:
-            err = CynexCloudErrorContainer("Suggestion Not Found", f"Suggestion `{suggestion_id}` is missing.")
+            err = BreezeErrorContainer("Suggestion Not Found", f"Suggestion `{suggestion_id}` is missing.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
         status, title, desc, category, anon, author_uid = row
         if status != "pending" and status != "approved":
-            warn = CynexCloudWarningContainer("Already Moderated", f"Suggestion `{suggestion_id}` status is already `{status}`.")
+            warn = BreezeWarningContainer("Already Moderated", f"Suggestion `{suggestion_id}` status is already `{status}`.")
             await interaction.followup.send(view=warn.build(), ephemeral=True)
             return
 
@@ -552,7 +552,7 @@ class Suggestions(commands.Cog):
                         if target_msg:
                             break
 
-                    pub_layout = CynexCloudContainerBuilder(f"Suggestion: {title}", accent_color=15158332) # Red
+                    pub_layout = BreezeContainerBuilder(f"Suggestion: {title}", accent_color=15158332) # Red
                     pub_layout.add_section("Category", f"`{category}`")
                     pub_layout.add_section("Description", desc)
                     pub_layout.add_section("Status", "🔴 **Denied**")
@@ -561,7 +561,7 @@ class Suggestions(commands.Cog):
                     pub_layout.add_section("Suggestion ID", f"`{suggestion_id}`")
                     
                     # Keep only stats button, remove upvote/downvote
-                    btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:stats:{suggestion_id}")
+                    btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:stats:{suggestion_id}")
                     pub_layout.add_buttons(btn_stats)
 
                     if target_msg:
@@ -569,7 +569,7 @@ class Suggestions(commands.Cog):
                 except Exception:
                     pass
 
-        success = CynexCloudSuccessContainer("Suggestion Denied", f"Suggestion `{suggestion_id}` denied successfully.")
+        success = BreezeSuccessContainer("Suggestion Denied", f"Suggestion `{suggestion_id}` denied successfully.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @suggestion_group.command(name="implement", description="Mark a suggestion as implemented")
@@ -584,13 +584,13 @@ class Suggestions(commands.Cog):
                 row = await cursor.fetchone()
 
         if not row:
-            err = CynexCloudErrorContainer("Suggestion Not Found", f"Suggestion `{suggestion_id}` is missing.")
+            err = BreezeErrorContainer("Suggestion Not Found", f"Suggestion `{suggestion_id}` is missing.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
         status, title, desc, category, anon, author_uid, thread_id = row
         if status != "approved":
-            warn = CynexCloudWarningContainer("Status Conflict", f"Only approved suggestions can be marked as implemented (Current status: `{status}`).")
+            warn = BreezeWarningContainer("Status Conflict", f"Only approved suggestions can be marked as implemented (Current status: `{status}`).")
             await interaction.followup.send(view=warn.build(), ephemeral=True)
             return
 
@@ -627,7 +627,7 @@ class Suggestions(commands.Cog):
                         if target_msg:
                             break
 
-                    pub_layout = CynexCloudContainerBuilder(f"Suggestion: {title}", accent_color=13937975) # Gold
+                    pub_layout = BreezeContainerBuilder(f"Suggestion: {title}", accent_color=13937975) # Gold
                     pub_layout.add_section("Category", f"`{category}`")
                     pub_layout.add_section("Description", desc)
                     pub_layout.add_section("Status", "🔵 **Implemented**")
@@ -635,7 +635,7 @@ class Suggestions(commands.Cog):
                     pub_layout.add_section("Author", "Anonymous" if anon else f"<@{author_uid}>")
                     pub_layout.add_section("Suggestion ID", f"`{suggestion_id}`")
                     
-                    btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:suggest:stats:{suggestion_id}")
+                    btn_stats = Button(label="📊 Stats", style=discord.ButtonStyle.secondary, custom_id=f"breeze:suggest:stats:{suggestion_id}")
                     pub_layout.add_buttons(btn_stats)
 
                     if target_msg:
@@ -649,7 +649,7 @@ class Suggestions(commands.Cog):
                 except Exception:
                     pass
 
-        success = CynexCloudSuccessContainer("Suggestion Implemented", f"Suggestion `{suggestion_id}` marked as implemented.")
+        success = BreezeSuccessContainer("Suggestion Implemented", f"Suggestion `{suggestion_id}` marked as implemented.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @suggestion_group.command(name="archive", description="Archive a suggestion post")
@@ -664,7 +664,7 @@ class Suggestions(commands.Cog):
                 row = await cursor.fetchone()
                 
         if not row:
-            err = CynexCloudErrorContainer("Suggestion Not Found", f"Suggestion `{suggestion_id}` does not exist.")
+            err = BreezeErrorContainer("Suggestion Not Found", f"Suggestion `{suggestion_id}` does not exist.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
@@ -677,7 +677,7 @@ class Suggestions(commands.Cog):
             except Exception:
                 pass
                 
-        success = CynexCloudSuccessContainer("Suggestion Archived", f"Suggestion thread for `{suggestion_id}` has been archived.")
+        success = BreezeSuccessContainer("Suggestion Archived", f"Suggestion thread for `{suggestion_id}` has been archived.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @suggestion_group.command(name="stats", description="Show suggestion analytics and leaderboards")
@@ -700,7 +700,7 @@ class Suggestions(commands.Cog):
 
         approval_rate = (approved / total * 100) if total > 0 else 0.0
 
-        stats_card = CynexCloudInfoContainer("Suggestions Analytics", f"**Server:** {interaction.guild.name}")
+        stats_card = BreezeInfoContainer("Suggestions Analytics", f"**Server:** {interaction.guild.name}")
         stats_card.add_section("Total Submitted", f"`{total}` suggestions")
         stats_card.add_section("Approved", f"`{approved}` approved")
         stats_card.add_section("Implemented", f"`{implemented}` implemented")

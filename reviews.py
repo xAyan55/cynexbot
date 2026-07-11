@@ -20,16 +20,16 @@ from discord.ui import (
 
 import ui
 from ui import (
-    CynexCloudSuccessContainer,
-    CynexCloudErrorContainer,
-    CynexCloudWarningContainer,
-    CynexCloudInfoContainer,
-    CynexCloudPaginationContainer,
-    CynexCloudContainerBuilder
+    BreezeSuccessContainer,
+    BreezeErrorContainer,
+    BreezeWarningContainer,
+    BreezeInfoContainer,
+    BreezePaginationContainer,
+    BreezeContainerBuilder
 )
 
-logger = logging.getLogger("CynexCloud.Reviews")
-DB_PATH = "cynex.db"
+logger = logging.getLogger("Breeze.Reviews")
+DB_PATH = "breeze.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # REVIEW SUBMISSION MODALS
@@ -76,13 +76,13 @@ class ReviewSubmitModal(discord.ui.Modal, title="Submit a Service Review"):
             if val < 1 or val > 5:
                 raise ValueError()
         except ValueError:
-            err = CynexCloudErrorContainer("Invalid Rating", "Please enter an integer between 1 and 5 for your rating.")
+            err = BreezeErrorContainer("Invalid Rating", "Please enter an integer between 1 and 5 for your rating.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
         screenshot_url = self.screenshot.value.strip()
         if screenshot_url and not (screenshot_url.startswith("http://") or screenshot_url.startswith("https://")):
-            err = CynexCloudErrorContainer("Invalid Screenshot URL", "Please enter a valid HTTP/HTTPS image URL.")
+            err = BreezeErrorContainer("Invalid Screenshot URL", "Please enter a valid HTTP/HTTPS image URL.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -123,7 +123,7 @@ class ReviewSubmitModal(discord.ui.Modal, title="Submit a Service Review"):
 
         if pub_channel:
             try:
-                pub_layout = CynexCloudContainerBuilder(f"Review: {service_text}", accent_color=13937975) # Gold
+                pub_layout = BreezeContainerBuilder(f"Review: {service_text}", accent_color=13937975) # Gold
                 meta_content = f"**Rating:** {'⭐' * val}\n**Submitted By:** {interaction.user.mention}"
                 if screenshot_url:
                     meta_content += f"\n**Screenshot Reference:** {screenshot_url}"
@@ -131,16 +131,16 @@ class ReviewSubmitModal(discord.ui.Modal, title="Submit a Service Review"):
                 pub_layout.add_section("Customer Review", message_text)
                 pub_layout.add_section("Metadata", meta_content)
                 
-                btn_helpful = Button(label="Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:vote:helpful:{review_id}")
-                btn_unhelpful = Button(label="Not Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:vote:unhelpful:{review_id}")
-                btn_report = Button(label="Report Review", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:report:{review_id}")
+                btn_helpful = Button(label="Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:vote:helpful:{review_id}")
+                btn_unhelpful = Button(label="Not Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:vote:unhelpful:{review_id}")
+                btn_report = Button(label="Report Review", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:report:{review_id}")
                 pub_layout.add_buttons(btn_helpful, btn_unhelpful, btn_report)
                 
                 await pub_channel.send(view=pub_layout.build())
             except Exception as pub_err:
                 logger.warning(f"Failed to publish review message: {pub_err}")
 
-        success = CynexCloudSuccessContainer("Review Submitted", f"Thank you! Your review `{review_id}` has been published to {pub_channel.mention if pub_channel else 'the reviews channel'}.")
+        success = BreezeSuccessContainer("Review Submitted", f"Thank you! Your review `{review_id}` has been published to {pub_channel.mention if pub_channel else 'the reviews channel'}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
 class ReviewDenyModal(discord.ui.Modal, title="Deny Review Confirmation"):
@@ -170,14 +170,14 @@ class ReviewDenyModal(discord.ui.Modal, title="Deny Review Confirmation"):
 
         # Update mod channel message
         try:
-            denied_layout = CynexCloudErrorContainer("Review Denied", f"Review `{self.review_id}` has been denied.")
+            denied_layout = BreezeErrorContainer("Review Denied", f"Review `{self.review_id}` has been denied.")
             denied_layout.add_section("Moderator", interaction.user.mention)
             denied_layout.add_section("Reason", reason_text)
             await self.message.edit(view=denied_layout.build())
         except Exception:
             pass
 
-        success = CynexCloudSuccessContainer("Review Denied Successfully", f"Review `{self.review_id}` status has been set to denied.")
+        success = BreezeSuccessContainer("Review Denied Successfully", f"Review `{self.review_id}` status has been set to denied.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -244,7 +244,7 @@ class Reviews(commands.Cog):
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
         custom_id = interaction.data.get("custom_id") if interaction.data else None
-        if not custom_id or not custom_id.startswith("cynexcloud:review:"):
+        if not custom_id or not custom_id.startswith("breeze:review:"):
             return
 
         parts = custom_id.split(":")
@@ -263,7 +263,7 @@ class Reviews(commands.Cog):
                     review = await cursor.fetchone()
             
             if not review:
-                err = CynexCloudErrorContainer("Review Not Found", f"Metadata for `{review_id}` is missing.")
+                err = BreezeErrorContainer("Review Not Found", f"Metadata for `{review_id}` is missing.")
                 await interaction.followup.send(view=err.build(), ephemeral=True)
                 return
 
@@ -271,7 +271,7 @@ class Reviews(commands.Cog):
             
             # Edit Mod Message
             try:
-                mod_ok = CynexCloudSuccessContainer("Review Approved", f"Review `{review_id}` has been approved.")
+                mod_ok = BreezeSuccessContainer("Review Approved", f"Review `{review_id}` has been approved.")
                 mod_ok.add_section("Moderator", interaction.user.mention)
                 await interaction.message.edit(view=mod_ok.build())
             except Exception:
@@ -283,23 +283,23 @@ class Reviews(commands.Cog):
                 pub_channel = interaction.guild.get_channel(int(settings["review_channel_id"]))
                 if pub_channel:
                     try:
-                        pub_layout = CynexCloudContainerBuilder(f"Review: {service}", accent_color=13937975) # Gold
+                        pub_layout = BreezeContainerBuilder(f"Review: {service}", accent_color=13937975) # Gold
                         pub_layout.add_section("Rating", "⭐" * rating)
                         pub_layout.add_section("Customer Review", msg_content)
                         pub_layout.add_section("Submitted By", f"<@{author_id}>")
                         if screenshot_url:
                             pub_layout.add_section("Screenshot Reference", screenshot_url)
                         
-                        btn_helpful = Button(label="Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:vote:helpful:{review_id}")
-                        btn_unhelpful = Button(label="Not Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:vote:unhelpful:{review_id}")
-                        btn_report = Button(label="Report Review", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:report:{review_id}")
+                        btn_helpful = Button(label="Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:vote:helpful:{review_id}")
+                        btn_unhelpful = Button(label="Not Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:vote:unhelpful:{review_id}")
+                        btn_report = Button(label="Report Review", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:report:{review_id}")
                         pub_layout.add_buttons(btn_helpful, btn_unhelpful, btn_report)
                         
                         await pub_channel.send(view=pub_layout.build())
                     except Exception as pub_err:
                         logger.warning(f"Failed to publish review message: {pub_err}")
 
-            success = CynexCloudSuccessContainer("Review Approved Successfully", f"Review `{review_id}` is published.")
+            success = BreezeSuccessContainer("Review Approved Successfully", f"Review `{review_id}` is published.")
             await interaction.followup.send(view=success.build(), ephemeral=True)
 
         # Deny flow
@@ -373,7 +373,7 @@ class Reviews(commands.Cog):
                             
                     if rev_row:
                         author_id, rating, service, msg_content, screenshot_url = rev_row
-                        pub_layout = CynexCloudContainerBuilder(f"Review: {service}", accent_color=13937975)
+                        pub_layout = BreezeContainerBuilder(f"Review: {service}", accent_color=13937975)
                         meta_content = f"**Rating:** {'⭐' * rating}\n**Submitted By:** <@{author_id}>"
                         if screenshot_url:
                             meta_content += f"\n**Screenshot Reference:** {screenshot_url}"
@@ -381,16 +381,16 @@ class Reviews(commands.Cog):
                         pub_layout.add_section("Customer Review", msg_content)
                         pub_layout.add_section("Metadata", meta_content)
                         
-                        btn_helpful = Button(label=f"Helpful ({help_count})", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:vote:helpful:{review_id}")
-                        btn_unhelpful = Button(label=f"Not Helpful ({unhelp_count})", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:vote:unhelpful:{review_id}")
-                        btn_report = Button(label="Report Review", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:report:{review_id}")
+                        btn_helpful = Button(label=f"Helpful ({help_count})", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:vote:helpful:{review_id}")
+                        btn_unhelpful = Button(label=f"Not Helpful ({unhelp_count})", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:vote:unhelpful:{review_id}")
+                        btn_report = Button(label="Report Review", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:report:{review_id}")
                         pub_layout.add_buttons(btn_helpful, btn_unhelpful, btn_report)
                         
                         await message.edit(view=pub_layout.build())
             except Exception as edit_err:
                 logger.warning(f"Failed to edit public review votes button: {edit_err}")
 
-            success = CynexCloudSuccessContainer("Vote Logged", f"Your helpfulness vote has been successfully {msg_action}.")
+            success = BreezeSuccessContainer("Vote Logged", f"Your helpfulness vote has been successfully {msg_action}.")
             await interaction.followup.send(view=success.build(), ephemeral=True)
 
         # Report flow
@@ -403,18 +403,18 @@ class Reviews(commands.Cog):
                 mod_channel = interaction.guild.get_channel(int(settings["mod_channel_id"]))
                 if mod_channel:
                     try:
-                        rep_card = CynexCloudWarningContainer("Review Reported Alert", f"Review `{review_id}` was reported by a customer.")
+                        rep_card = BreezeWarningContainer("Review Reported Alert", f"Review `{review_id}` was reported by a customer.")
                         rep_card.add_section("Reporter", interaction.user.mention)
                         rep_card.add_section("Review Link/Message", f"[Jump to original Review]({interaction.message.jump_url})")
                         
-                        del_btn = Button(label="Force Delete Review", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:forcedelete:{review_id}")
+                        del_btn = Button(label="Force Delete Review", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:forcedelete:{review_id}")
                         rep_card.add_buttons(del_btn)
                         
                         await mod_channel.send(view=rep_card.build())
                     except Exception:
                         pass
             
-            success = CynexCloudSuccessContainer("Report Submitted", "Thank you for reporting. This review has been submitted to staff for inspection.")
+            success = BreezeSuccessContainer("Report Submitted", "Thank you for reporting. This review has been submitted to staff for inspection.")
             await interaction.followup.send(view=success.build(), ephemeral=True)
 
         # Force delete review (moderator action)
@@ -424,7 +424,7 @@ class Reviews(commands.Cog):
             
             is_admin = interaction.user.guild_permissions.administrator
             if not is_admin:
-                err = CynexCloudErrorContainer("Permission Denied", "Only administrators can force-delete reviews.")
+                err = BreezeErrorContainer("Permission Denied", "Only administrators can force-delete reviews.")
                 await interaction.followup.send(view=err.build(), ephemeral=True)
                 return
                 
@@ -435,19 +435,19 @@ class Reviews(commands.Cog):
                 
             # Update mod report card
             try:
-                done = CynexCloudSuccessContainer("Review Force Deleted", f"Review `{review_id}` has been deleted from database by {interaction.user.mention}.")
+                done = BreezeSuccessContainer("Review Force Deleted", f"Review `{review_id}` has been deleted from database by {interaction.user.mention}.")
                 await interaction.message.edit(view=done.build())
             except Exception:
                 pass
                 
-            success = CynexCloudSuccessContainer("Review Deleted", f"Review `{review_id}` deleted successfully.")
+            success = BreezeSuccessContainer("Review Deleted", f"Review `{review_id}` deleted successfully.")
             await interaction.followup.send(view=success.build(), ephemeral=True)
 
     # ══════════════════════════════════════════════════════════════════════
     # REVIEWS SLASH COMMAND TREE (/review)
     # ══════════════════════════════════════════════════════════════════════
 
-    review_group = app_commands.Group(name="review", description="CynexCloud reviews management system")
+    review_group = app_commands.Group(name="review", description="Breeze reviews management system")
 
     @review_group.command(name="setup", description="Configure reviews channels")
     @app_commands.describe(review_channel="Channel for approved public reviews", mod_channel="Moderation review queue channel")
@@ -463,7 +463,7 @@ class Reviews(commands.Cog):
             )
             await db.commit()
 
-        success = CynexCloudSuccessContainer(
+        success = BreezeSuccessContainer(
             "Reviews Setup Completed",
             f"• Public Review Channel: {review_channel.mention}\n• Review Mod Channel: {mod_channel.mention}"
         )
@@ -474,7 +474,7 @@ class Reviews(commands.Cog):
         guild_id = str(interaction.guild.id)
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = CynexCloudErrorContainer("Configuration Error", "Reviews system is not set up on this server. Ask an administrator to run `/review setup`.")
+            err = BreezeErrorContainer("Configuration Error", "Reviews system is not set up on this server. Ask an administrator to run `/review setup`.")
             await interaction.response.send_message(view=err.build(), ephemeral=True)
             return
 
@@ -492,13 +492,13 @@ class Reviews(commands.Cog):
                 row = await cursor.fetchone()
                 
         if not row:
-            err = CynexCloudErrorContainer("Review Not Found", f"Review `{review_id}` does not exist.")
+            err = BreezeErrorContainer("Review Not Found", f"Review `{review_id}` does not exist.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         status, author_id, rating, service, msg_content, screenshot_url = row
         if status != "pending":
-            warn = CynexCloudWarningContainer("Already Moderated", f"Review `{review_id}` is already `{status}`.")
+            warn = BreezeWarningContainer("Already Moderated", f"Review `{review_id}` is already `{status}`.")
             await interaction.followup.send(view=warn.build(), ephemeral=True)
             return
 
@@ -520,7 +520,7 @@ class Reviews(commands.Cog):
             
             if pub_channel:
                 try:
-                    pub_layout = CynexCloudContainerBuilder(f"Review: {service}", accent_color=13937975)
+                    pub_layout = BreezeContainerBuilder(f"Review: {service}", accent_color=13937975)
                     meta_content = f"**Rating:** {'⭐' * rating}\n**Submitted By:** <@{author_id}>"
                     if screenshot_url:
                         meta_content += f"\n**Screenshot Reference:** {screenshot_url}"
@@ -528,16 +528,16 @@ class Reviews(commands.Cog):
                     pub_layout.add_section("Customer Review", msg_content)
                     pub_layout.add_section("Metadata", meta_content)
                     
-                    btn_helpful = Button(label="Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:vote:helpful:{review_id}")
-                    btn_unhelpful = Button(label="Not Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:vote:unhelpful:{review_id}")
-                    btn_report = Button(label="Report Review", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:review:report:{review_id}")
+                    btn_helpful = Button(label="Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:vote:helpful:{review_id}")
+                    btn_unhelpful = Button(label="Not Helpful (0)", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:vote:unhelpful:{review_id}")
+                    btn_report = Button(label="Report Review", style=discord.ButtonStyle.secondary, custom_id=f"breeze:review:report:{review_id}")
                     pub_layout.add_buttons(btn_helpful, btn_unhelpful, btn_report)
                     
                     await pub_channel.send(view=pub_layout.build())
                 except Exception as pub_err:
                     logger.warning(f"Failed to publish review message: {pub_err}")
 
-        success = CynexCloudSuccessContainer("Review Approved", f"Review `{review_id}` approved and posted.")
+        success = BreezeSuccessContainer("Review Approved", f"Review `{review_id}` approved and posted.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @review_group.command(name="deny", description="Deny a pending review")
@@ -551,13 +551,13 @@ class Reviews(commands.Cog):
                 row = await cursor.fetchone()
                 
         if not row:
-            err = CynexCloudErrorContainer("Review Not Found", f"Review `{review_id}` does not exist.")
+            err = BreezeErrorContainer("Review Not Found", f"Review `{review_id}` does not exist.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         status = row[0]
         if status != "pending":
-            warn = CynexCloudWarningContainer("Already Moderated", f"Review `{review_id}` is already `{status}`.")
+            warn = BreezeWarningContainer("Already Moderated", f"Review `{review_id}` is already `{status}`.")
             await interaction.followup.send(view=warn.build(), ephemeral=True)
             return
 
@@ -565,7 +565,7 @@ class Reviews(commands.Cog):
             await db.execute("UPDATE reviews SET status = 'denied' WHERE review_id = ?", (review_id,))
             await db.commit()
 
-        success = CynexCloudSuccessContainer("Review Denied", f"Review `{review_id}` has been denied. Reason: **{reason}**")
+        success = BreezeSuccessContainer("Review Denied", f"Review `{review_id}` has been denied. Reason: **{reason}**")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @review_group.command(name="delete", description="Delete an existing review")
@@ -579,7 +579,7 @@ class Reviews(commands.Cog):
                 row = await cursor.fetchone()
                 
         if not row:
-            err = CynexCloudErrorContainer("Review Not Found", f"Review `{review_id}` does not exist.")
+            err = BreezeErrorContainer("Review Not Found", f"Review `{review_id}` does not exist.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -588,7 +588,7 @@ class Reviews(commands.Cog):
             await db.execute("DELETE FROM review_votes WHERE review_id = ?", (review_id,))
             await db.commit()
 
-        success = CynexCloudSuccessContainer("Review Deleted", f"Review `{review_id}` has been deleted from the database.")
+        success = BreezeSuccessContainer("Review Deleted", f"Review `{review_id}` has been deleted from the database.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @review_group.command(name="list", description="List approved reviews")
@@ -604,7 +604,7 @@ class Reviews(commands.Cog):
                 rows = await cursor.fetchall()
 
         if not rows:
-            info = CynexCloudInfoContainer("No Reviews", "There are no approved reviews on this server yet.")
+            info = BreezeInfoContainer("No Reviews", "There are no approved reviews on this server yet.")
             await interaction.followup.send(view=info.build(), ephemeral=True)
             return
 
@@ -623,7 +623,7 @@ class Reviews(commands.Cog):
                 )
             pages.append(page_text)
 
-        paginator = CynexCloudPaginationContainer("Server Reviews List", pages, interaction.user.id, accent_color=13937975)
+        paginator = BreezePaginationContainer("Server Reviews List", pages, interaction.user.id, accent_color=13937975)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
     @review_group.command(name="stats", description="Show reviews statistics and analytics")
@@ -644,7 +644,7 @@ class Reviews(commands.Cog):
             ) as cursor:
                 leaderboard = await cursor.fetchall()
 
-        stats_card = CynexCloudInfoContainer("Reviews Analytics", f"**Server:** {interaction.guild.name}")
+        stats_card = BreezeInfoContainer("Reviews Analytics", f"**Server:** {interaction.guild.name}")
         stats_card.add_section("Total Reviews", f"`{total}` approved reviews")
         stats_card.add_section("Average Rating", f"`{avg:.2f}` / 5.0 {'⭐' * int(round(avg))}")
         

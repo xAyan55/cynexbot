@@ -1,5 +1,5 @@
 [Unit]
-Description=CynexCloud Discord Bot Service
+Description=Breeze Discord Bot Service
 After=network.target
 
 [Service]
@@ -11,7 +11,7 @@ Restart=always
 RestartSec=5
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=cynexcloud-bot
+SyslogIdentifier=breeze-bot
 
 # Ensure the process restarts if it exits unexpectedly
 Environment=PYTHONUNBUFFERED=1

@@ -41,16 +41,27 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
-logger = logging.getLogger("CynexCloud")
+logger = logging.getLogger("Breeze")
 
-DB_PATH = "cynex.db"
+DB_PATH = "breeze.db"
 
-class CynexCloudBot(commands.Bot):
+# Auto-migrate database from cynex.db to breeze.db if it exists
+import shutil
+import os
+if os.path.exists("cynex.db") and not os.path.exists("breeze.db"):
+    try:
+        shutil.copy("cynex.db", "breeze.db")
+        logger.info("Auto-migrated database from cynex.db to breeze.db successfully.")
+    except Exception as e:
+        logger.error(f"Failed to migrate cynex.db to breeze.db: {e}")
+
+
+class BreezeBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True  # Required to capture message transcripts
         intents.members = True          # Required for welcome system events
-        super().__init__(command_prefix="cynex!", intents=intents)
+        super().__init__(command_prefix="breeze!", intents=intents)
         self.start_time = datetime.now()
 
     async def setup_hook(self):
@@ -82,14 +93,14 @@ class CynexCloudBot(commands.Bot):
         await self.tree.sync()
         logger.info("Command tree synced globally.")
 
-bot = CynexCloudBot()
+bot = BreezeBot()
 
 # ══════════════════════════════════════════════════════════════════════
-# DATABASE OPERATIONS (cynex.db)
+# DATABASE OPERATIONS (breeze.db)
 # ══════════════════════════════════════════════════════════════════════
 
 async def init_db():
-    """Initializes SQLite tables in cynex.db if they do not exist."""
+    """Initializes SQLite tables in breeze.db if they do not exist."""
     import aiosqlite
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL")
@@ -1060,7 +1071,7 @@ class BuilderView(discord.ui.View):
         if self.message:
             try:
                 embed = discord.Embed(
-                    title="⌛ CynexCloud Builder (Timed Out) ⌛",
+                    title="⌛ Breeze Builder (Timed Out) ⌛",
                     description="This building session timed out due to inactivity. Progress saved as draft. Run `/container builder` to recover.",
                     color=discord.Color.red()
                 )
@@ -1510,7 +1521,7 @@ def make_builder_embed(user_id: str, components: List[dict], container_props: di
     remaining = 40 - count
     
     embed = discord.Embed(
-        title="⚡ CynexCloud Container Builder ⚡",
+        title="⚡ Breeze Container Builder ⚡",
         description="Build professional Discord Components V2 layouts interactively.",
         color=discord.Color.blurple()
     )
@@ -1542,7 +1553,7 @@ def make_builder_embed(user_id: str, components: List[dict], container_props: di
         inline=False
     )
     
-    embed.set_footer(text="CynexCloud V2 Builder • Multi-user • Autosaved")
+    embed.set_footer(text="Breeze V2 Builder • Multi-user • Autosaved")
     return embed
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1551,7 +1562,7 @@ def make_builder_embed(user_id: str, components: List[dict], container_props: di
 
 class ContainerGroup(app_commands.Group, name="container"):
     def __init__(self, bot):
-        super().__init__(description="CynexCloud Container commands")
+        super().__init__(description="Breeze Container commands")
         self.bot = bot
         
     @app_commands.command(name="builder", description="Open the visual Components V2 Container Builder")
@@ -1562,7 +1573,7 @@ class ContainerGroup(app_commands.Group, name="container"):
         if db_session:
             view = DraftPromptView(user_id, db_session)
             embed = discord.Embed(
-                title="📦 CynexCloud Unsaved Draft Found",
+                title="📦 Breeze Unsaved Draft Found",
                 description="You have an unsaved container draft. Would you like to restore it or start fresh?",
                 color=discord.Color.orange()
             )

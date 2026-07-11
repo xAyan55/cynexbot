@@ -26,16 +26,16 @@ from discord import MediaGalleryItem
 
 import ui
 from ui import (
-    CynexCloudSuccessContainer,
-    CynexCloudErrorContainer,
-    CynexCloudWarningContainer,
-    CynexCloudInfoContainer,
-    CynexCloudPaginationContainer,
-    CynexCloudContainerBuilder
+    BreezeSuccessContainer,
+    BreezeErrorContainer,
+    BreezeWarningContainer,
+    BreezeInfoContainer,
+    BreezePaginationContainer,
+    BreezeContainerBuilder
 )
 
-logger = logging.getLogger("CynexCloud.Utilities")
-DB_PATH = "cynex.db"
+logger = logging.getLogger("Breeze.Utilities")
+DB_PATH = "breeze.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # UTILITY DATABASE LOGGER HELPER
@@ -151,14 +151,14 @@ async def handle_poll_vote_interaction(interaction: discord.Interaction, option_
             row = await cursor.fetchone()
             
     if not row:
-        err = CynexCloudErrorContainer("Poll Not Found", "Poll data not found in database.")
+        err = BreezeErrorContainer("Poll Not Found", "Poll data not found in database.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
     question, options_json, votes_json, anonymous_int, allow_multiple_int, end_time_str, status = row
     
     if status != "active":
-        err = CynexCloudErrorContainer("Poll Inactive", "This poll has already ended.")
+        err = BreezeErrorContainer("Poll Inactive", "This poll has already ended.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
@@ -203,14 +203,14 @@ async def handle_poll_vote_interaction(interaction: discord.Interaction, option_
     
     row_items = []
     for idx, opt in enumerate(options):
-        row_items.append(Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:poll:vote:{idx}"))
-    row_items.append(Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:poll:cancel"))
+        row_items.append(Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"breeze:poll:vote:{idx}"))
+    row_items.append(Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel"))
     
     container.add_item(ActionRow(*row_items))
     layout.add_item(container)
     
     await interaction.message.edit(view=layout)
-    success = CynexCloudSuccessContainer("Vote Saved", f"Your vote has been successfully {msg_action}!")
+    success = BreezeSuccessContainer("Vote Saved", f"Your vote has been successfully {msg_action}!")
     await interaction.followup.send(view=success.build(), ephemeral=True)
 
 async def handle_poll_cancel_interaction(interaction: discord.Interaction):
@@ -227,20 +227,20 @@ async def handle_poll_cancel_interaction(interaction: discord.Interaction):
             row = await cursor.fetchone()
             
     if not row:
-        err = CynexCloudErrorContainer("Poll Not Found", "Poll metadata was not located.")
+        err = BreezeErrorContainer("Poll Not Found", "Poll metadata was not located.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
     creator_id, question, options_json, votes_json, anonymous_int, allow_multiple_int, end_time_str, status = row
     
     if status != "active":
-        err = CynexCloudErrorContainer("Poll Inactive", "This poll is already closed or cancelled.")
+        err = BreezeErrorContainer("Poll Inactive", "This poll is already closed or cancelled.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
     is_admin = interaction.user.guild_permissions.administrator
     if user_id != creator_id and not is_admin:
-        err = CynexCloudErrorContainer("Unauthorized Action", "Only the poll creator or administrators can cancel this poll.")
+        err = BreezeErrorContainer("Unauthorized Action", "Only the poll creator or administrators can cancel this poll.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
@@ -261,7 +261,7 @@ async def handle_poll_cancel_interaction(interaction: discord.Interaction):
     layout.add_item(container)
     
     await interaction.message.edit(view=layout)
-    success = CynexCloudSuccessContainer("Poll Cancelled", "This poll status has been marked as cancelled.")
+    success = BreezeSuccessContainer("Poll Cancelled", "This poll status has been marked as cancelled.")
     await interaction.followup.send(view=success.build(), ephemeral=True)
 
 class PersistentPollView(discord.ui.View):
@@ -269,23 +269,23 @@ class PersistentPollView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-    @discord.ui.button(label="Option 1", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:poll:vote:0")
+    @discord.ui.button(label="Option 1", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:vote:0")
     async def vote_0(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_vote_interaction(interaction, 0)
 
-    @discord.ui.button(label="Option 2", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:poll:vote:1")
+    @discord.ui.button(label="Option 2", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:vote:1")
     async def vote_1(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_vote_interaction(interaction, 1)
 
-    @discord.ui.button(label="Option 3", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:poll:vote:2")
+    @discord.ui.button(label="Option 3", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:vote:2")
     async def vote_2(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_vote_interaction(interaction, 2)
 
-    @discord.ui.button(label="Option 4", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:poll:vote:3")
+    @discord.ui.button(label="Option 4", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:vote:3")
     async def vote_3(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_vote_interaction(interaction, 3)
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:poll:cancel")
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel")
     async def cancel_poll(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_cancel_interaction(interaction)
 
@@ -446,7 +446,7 @@ class Utilities(commands.Cog):
                         user = await self.bot.fetch_user(int(user_id))
                         
                     if channel and user:
-                        rem_layout = CynexCloudInfoContainer("CynexCloud Reminder Alert", text)
+                        rem_layout = BreezeInfoContainer("Breeze Reminder Alert", text)
                         rem_layout.add_section("Recipient", user.mention)
                         rem_layout.add_section("Setting Details", "To clear/modify future reminders, type `/remind list`.")
                         await channel.send(content=user.mention, view=rem_layout.build())
@@ -524,7 +524,7 @@ class Utilities(commands.Cog):
                 await db.execute("DELETE FROM afk_users WHERE user_id = ?", (str(message.author.id),))
                 await db.commit()
                 
-            welcome = CynexCloudSuccessContainer("Welcome Back", f"Hello {message.author.mention}, I've removed your AFK status.")
+            welcome = BreezeSuccessContainer("Welcome Back", f"Hello {message.author.mention}, I've removed your AFK status.")
             await message.channel.send(view=welcome.build(), reference=message, delete_after=10)
             
         if message.mentions:
@@ -546,7 +546,7 @@ class Utilities(commands.Cog):
                     except Exception:
                         time_display = "some time ago"
                         
-                    afk_card = CynexCloudInfoContainer("Member AFK", f"💤 **{user.display_name}** is currently Away From Keyboard.")
+                    afk_card = BreezeInfoContainer("Member AFK", f"💤 **{user.display_name}** is currently Away From Keyboard.")
                     afk_card.add_section("Reason", reason)
                     afk_card.add_section("Away Since", time_display)
                     await message.channel.send(view=afk_card.build(), reference=message, delete_after=10)
@@ -667,7 +667,7 @@ class Utilities(commands.Cog):
             
         flags_str = ", ".join(flags) if flags else "None"
         
-        card = CynexCloudInfoContainer(f"User Profile: {target}", f"Metadata cards generated for {target.mention}.")
+        card = BreezeInfoContainer(f"User Profile: {target}", f"Metadata cards generated for {target.mention}.")
         card.add_section("Username", f"`{target.name}`")
         card.add_section("Display Name", f"`{target.display_name}`")
         card.add_section("User ID", f"`{target.id}`")
@@ -692,7 +692,7 @@ class Utilities(commands.Cog):
         bots = sum(1 for m in guild.members if m.bot)
         humans = guild.member_count - bots
         
-        card = CynexCloudInfoContainer(f"Server Metrics: {guild.name}", f"ID: `{guild.id}`")
+        card = BreezeInfoContainer(f"Server Metrics: {guild.name}", f"ID: `{guild.id}`")
         card.add_section("Server Owner", f"{guild.owner.mention} (`{guild.owner_id}`)")
         card.add_section("Created On", f"<t:{int(guild.created_at.timestamp())}:F> (<t:{int(guild.created_at.timestamp())}:R>)")
         card.add_section("Members Metrics", f"👥 Total: `{guild.member_count}` | 👤 Humans: `{humans}` | 🤖 Bots: `{bots}`")
@@ -708,7 +708,7 @@ class Utilities(commands.Cog):
         await log_command_usage("avatar", interaction)
         target = member or interaction.user
         
-        card = CynexCloudInfoContainer(f"Avatar of {target.display_name}")
+        card = BreezeInfoContainer(f"Avatar of {target.display_name}")
         card.layout.add_item(MediaGallery(MediaGalleryItem(target.display_avatar.url)))
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
@@ -721,11 +721,11 @@ class Utilities(commands.Cog):
         
         user = await self.bot.fetch_user(target.id)
         if not user.banner:
-            err = CynexCloudErrorContainer("No Banner Detected", f"User {target.mention} does not have a profile banner configuration.")
+            err = BreezeErrorContainer("No Banner Detected", f"User {target.mention} does not have a profile banner configuration.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
-        card = CynexCloudInfoContainer(f"Profile Banner of {target.display_name}")
+        card = BreezeInfoContainer(f"Profile Banner of {target.display_name}")
         card.layout.add_item(MediaGallery(MediaGalleryItem(user.banner.url)))
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
@@ -739,7 +739,7 @@ class Utilities(commands.Cog):
         permissions = [p[0].replace('_', ' ').title() for p in role.permissions if p[1]]
         perms_str = ", ".join(permissions[:15]) + (f" and {len(permissions)-15} more..." if len(permissions) > 15 else "") if permissions else "None"
         
-        card = CynexCloudInfoContainer(f"Role Config: {role.name}", f"ID: `{role.id}`")
+        card = BreezeInfoContainer(f"Role Config: {role.name}", f"ID: `{role.id}`")
         card.add_section("Color Code", f"`{role.color}`")
         card.add_section("Position Rank", f"`{role.position}`")
         card.add_section("Members Assigned", f"`{member_count}` users")
@@ -755,7 +755,7 @@ class Utilities(commands.Cog):
         await log_command_usage("channelinfo", interaction)
         target = channel or interaction.channel
         
-        card = CynexCloudInfoContainer(f"Channel Config: #{target.name}", f"ID: `{target.id}`")
+        card = BreezeInfoContainer(f"Channel Config: #{target.name}", f"ID: `{target.id}`")
         card.add_section("Type", f"`{target.type.name.title()}`")
         card.add_section("Category Parent", f"{target.category.name if target.category else 'None'}")
         card.add_section("Channel Position", f"`{target.position}`")
@@ -778,7 +778,7 @@ class Utilities(commands.Cog):
         bots = sum(1 for m in guild.members if m.bot)
         humans = total - bots
         
-        card = CynexCloudInfoContainer(f"Server Members: {guild.name}")
+        card = BreezeInfoContainer(f"Server Members: {guild.name}")
         card.add_section("Total Members", f"`{total}`")
         card.add_section("Humans", f"`{humans}`")
         card.add_section("Bots", f"`{bots}`")
@@ -799,11 +799,11 @@ class Utilities(commands.Cog):
         db_latency = (datetime.now() - t1).total_seconds() * 1000
         
         t2 = datetime.now()
-        card_loader = CynexCloudInfoContainer("Ping Latency Metric", "Measuring API latency round trip...")
+        card_loader = BreezeInfoContainer("Ping Latency Metric", "Measuring API latency round trip...")
         followup_msg = await interaction.followup.send(view=card_loader.build(), ephemeral=True)
         api_latency = (datetime.now() - t2).total_seconds() * 1000
         
-        card = CynexCloudInfoContainer("🏓 Pong Latencies", "System connection and storage latencies.")
+        card = BreezeInfoContainer("🏓 Pong Latencies", "System connection and storage latencies.")
         card.add_section("Gateway Latency", f"`{gw_latency:.1f}ms`")
         card.add_section("Discord API Latency", f"`{api_latency:.1f}ms`")
         card.add_section("Database Latency", f"`{db_latency:.1f}ms`")
@@ -825,10 +825,10 @@ class Utilities(commands.Cog):
             )
             await db.commit()
             
-        success = CynexCloudSuccessContainer("AFK Status Enabled", f"I have set your status to AFK: **{reason}**")
+        success = BreezeSuccessContainer("AFK Status Enabled", f"I have set your status to AFK: **{reason}**")
         await interaction.followup.send(view=success.build(), ephemeral=True)
         
-        broadcast = CynexCloudInfoContainer("AFK Notification", f"💤 {interaction.user.mention} is now Away From Keyboard: **{reason}**")
+        broadcast = BreezeInfoContainer("AFK Notification", f"💤 {interaction.user.mention} is now Away From Keyboard: **{reason}**")
         await interaction.channel.send(view=broadcast.build())
 
     @app_commands.command(name="snipe", description="Snipe recently deleted or edited messages")
@@ -844,11 +844,11 @@ class Utilities(commands.Cog):
         if type == "deleted":
             cache = self.sniped_deleted.get(channel_id)
             if not cache or len(cache) == 0:
-                err = CynexCloudErrorContainer("Sniper Log Empty", "No recently deleted messages found in this channel.")
+                err = BreezeErrorContainer("Sniper Log Empty", "No recently deleted messages found in this channel.")
                 await interaction.followup.send(view=err.build(), ephemeral=True)
                 return
             msg = cache[-1]
-            card = CynexCloudWarningContainer("Sniped Deleted Message", f"Author: {msg['author'].mention}")
+            card = BreezeWarningContainer("Sniped Deleted Message", f"Author: {msg['author'].mention}")
             card.add_section("Deleted Message Content", msg["content"] or "*No content (attachment only or empty)*")
             if msg["attachments"]:
                 card.add_section("Attachments URLs", "\n".join(msg["attachments"]))
@@ -857,11 +857,11 @@ class Utilities(commands.Cog):
         else:
             cache = self.sniped_edited.get(channel_id)
             if not cache or len(cache) == 0:
-                err = CynexCloudErrorContainer("Sniper Log Empty", "No recently edited messages found in this channel.")
+                err = BreezeErrorContainer("Sniper Log Empty", "No recently edited messages found in this channel.")
                 await interaction.followup.send(view=err.build(), ephemeral=True)
                 return
             msg = cache[-1]
-            card = CynexCloudWarningContainer("Sniped Edited Message", f"Author: {msg['author'].mention}")
+            card = BreezeWarningContainer("Sniped Edited Message", f"Author: {msg['author'].mention}")
             card.add_section("Content Before", msg["before"] or "*Empty*")
             card.add_section("Content After", msg["after"] or "*Empty*")
             card.add_section("Time Logged", f"<t:{int(msg['timestamp'].timestamp())}:R>")
@@ -889,13 +889,13 @@ class Utilities(commands.Cog):
         
         opt_list = [o.strip() for o in options.split(',') if o.strip()]
         if len(opt_list) < 2 or len(opt_list) > 4:
-            err = CynexCloudErrorContainer("Layout Restrictions", "Poll must contain between 2 and 4 options to fit action rows.")
+            err = BreezeErrorContainer("Layout Restrictions", "Poll must contain between 2 and 4 options to fit action rows.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         seconds = parse_duration(duration)
         if not seconds:
-            err = CynexCloudErrorContainer("Invalid Duration", "Please specify a correct duration tag like `1h`, `30m` or `1d`.")
+            err = BreezeErrorContainer("Invalid Duration", "Please specify a correct duration tag like `1h`, `30m` or `1d`.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
@@ -910,8 +910,8 @@ class Utilities(commands.Cog):
         
         row_items = []
         for idx, opt in enumerate(opt_list):
-            row_items.append(Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:poll:vote:{idx}"))
-        row_items.append(Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:poll:cancel"))
+            row_items.append(Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"breeze:poll:vote:{idx}"))
+        row_items.append(Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel"))
         
         container.add_item(ActionRow(*row_items))
         layout.add_item(container)
@@ -925,7 +925,7 @@ class Utilities(commands.Cog):
             )
             await db.commit()
             
-        success = CynexCloudSuccessContainer("Poll Created", f"Your poll was successfully posted in {interaction.channel.mention}.")
+        success = BreezeSuccessContainer("Poll Created", f"Your poll was successfully posted in {interaction.channel.mention}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="lock", description="Lock a channel to prevent users from sending messages")
@@ -938,17 +938,17 @@ class Utilities(commands.Cog):
         
         overwrite = target.overwrites_for(interaction.guild.default_role)
         if overwrite.send_messages is False:
-            err = CynexCloudErrorContainer("Conflict", f"{target.mention} is already locked.")
+            err = BreezeErrorContainer("Conflict", f"{target.mention} is already locked.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         overwrite.send_messages = False
         await target.set_permissions(interaction.guild.default_role, overwrite=overwrite, reason=f"Channel locked by {interaction.user}")
         
-        broadcast = CynexCloudWarningContainer("Channel Locked", f"🔒 **This channel has been locked by staff.**")
+        broadcast = BreezeWarningContainer("Channel Locked", f"🔒 **This channel has been locked by staff.**")
         await target.send(view=broadcast.build())
         
-        success = CynexCloudSuccessContainer("Channel Locked Successfully", f"Locked {target.mention}.")
+        success = BreezeSuccessContainer("Channel Locked Successfully", f"Locked {target.mention}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="unlock", description="Unlock a channel to allow users to send messages")
@@ -961,17 +961,17 @@ class Utilities(commands.Cog):
         
         overwrite = target.overwrites_for(interaction.guild.default_role)
         if overwrite.send_messages is not False:
-            err = CynexCloudErrorContainer("Conflict", f"{target.mention} is not locked.")
+            err = BreezeErrorContainer("Conflict", f"{target.mention} is not locked.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         overwrite.send_messages = None
         await target.set_permissions(interaction.guild.default_role, overwrite=overwrite, reason=f"Channel unlocked by {interaction.user}")
         
-        broadcast = CynexCloudSuccessContainer("Channel Unlocked", f"🔓 **This channel has been unlocked by staff.**")
+        broadcast = BreezeSuccessContainer("Channel Unlocked", f"🔓 **This channel has been unlocked by staff.**")
         await target.send(view=broadcast.build())
         
-        success = CynexCloudSuccessContainer("Channel Unlocked Successfully", f"Unlocked {target.mention}.")
+        success = BreezeSuccessContainer("Channel Unlocked Successfully", f"Unlocked {target.mention}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="slowmode", description="Set slowmode delay for a channel")
@@ -983,20 +983,20 @@ class Utilities(commands.Cog):
         target = channel or interaction.channel
         
         if seconds < 0 or seconds > 21600:
-            err = CynexCloudErrorContainer("Out of Range", "Slowmode delay must be between 0 and 21600 seconds.")
+            err = BreezeErrorContainer("Out of Range", "Slowmode delay must be between 0 and 21600 seconds.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         await target.edit(slowmode_delay=seconds, reason=f"Slowmode updated by {interaction.user}")
         
         if seconds == 0:
-            broadcast = CynexCloudSuccessContainer("Slowmode Disabled", f"⏱ **Slowmode has been disabled in this channel by {interaction.user.mention}.**")
+            broadcast = BreezeSuccessContainer("Slowmode Disabled", f"⏱ **Slowmode has been disabled in this channel by {interaction.user.mention}.**")
             await target.send(view=broadcast.build())
-            success = CynexCloudSuccessContainer("Slowmode Updated", f"Disabled slowmode in {target.mention}.")
+            success = BreezeSuccessContainer("Slowmode Updated", f"Disabled slowmode in {target.mention}.")
         else:
-            broadcast = CynexCloudWarningContainer("Slowmode Enabled", f"⏱ **Slowmode has been set to `{seconds}s` in this channel by {interaction.user.mention}.**")
+            broadcast = BreezeWarningContainer("Slowmode Enabled", f"⏱ **Slowmode has been set to `{seconds}s` in this channel by {interaction.user.mention}.**")
             await target.send(view=broadcast.build())
-            success = CynexCloudSuccessContainer("Slowmode Updated", f"Set slowmode in {target.mention} to `{seconds}s`.")
+            success = BreezeSuccessContainer("Slowmode Updated", f"Set slowmode in {target.mention} to `{seconds}s`.")
             
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
@@ -1008,26 +1008,26 @@ class Utilities(commands.Cog):
         await log_command_usage("purge", interaction)
         
         if limit < 1 or limit > 100:
-            err = CynexCloudErrorContainer("Invalid Limit", "Purge limit must be between 1 and 100.")
+            err = BreezeErrorContainer("Invalid Limit", "Purge limit must be between 1 and 100.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         deleted = await interaction.channel.purge(limit=limit)
-        success = CynexCloudSuccessContainer("Purge Completed", f"Successfully deleted `{len(deleted)}` messages.")
+        success = BreezeSuccessContainer("Purge Completed", f"Successfully deleted `{len(deleted)}` messages.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     # ══════════════════════════════════════════════════════════════════════
     # EXTENDED UTILITYslash COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    @app_commands.command(name="help", description="Show CynexCloud interactive visual commands menu")
+    @app_commands.command(name="help", description="Show Breeze interactive visual commands menu")
     async def help_menu(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("help", interaction)
         
         pages = [
             # Tickets
-            "🎫 **CynexCloud Support Ticket System**\n"
+            "🎫 **Breeze Support Ticket System**\n"
             "• `/ticket setup`: Configure tickets roles and log channels.\n"
             "• `/ticket panel`: Launches visual builder panel.\n"
             "• `/ticket close` / `/ticket reopen`: Closes/Reopens channels.\n"
@@ -1039,7 +1039,7 @@ class Utilities(commands.Cog):
             "• `/ticket stats`: Database stats overview.",
             
             # Reviews
-            "⭐ **CynexCloud Service Reviews Module**\n"
+            "⭐ **Breeze Service Reviews Module**\n"
             "• `/review setup [review_ch] [mod_ch]`: Setup reviews system.\n"
             "• `/review submit`: Opens reviews submit modal.\n"
             "• `/review list`: Paginated server reviews.\n"
@@ -1047,7 +1047,7 @@ class Utilities(commands.Cog):
             "• `/review approve [id]` / `/review deny [id]`: Staff mod queue.",
             
             # Suggestions
-            "💡 **CynexCloud Suggestions System**\n"
+            "💡 **Breeze Suggestions System**\n"
             "• `/suggest [category] [anonymous]`: Opens idea modal.\n"
             "• `/suggestion setup [channel]`: Setup suggestions destination.\n"
             "• `/suggestion approve [id] [reason]`: Approves suggestion and opens thread.\n"
@@ -1056,7 +1056,7 @@ class Utilities(commands.Cog):
             "• `/suggestion stats`: Suggestions approval rate metric.",
             
             # Welcome
-            "👋 **CynexCloud Welcome & Auto-Roles**\n"
+            "👋 **Breeze Welcome & Auto-Roles**\n"
             "• `/welcome setup [ch] [dm_enabled] [log_ch] [auto_role]`: Configure welcome parameters.\n"
             "• `/welcome preview` / `/welcome test`: Banners visual tester.\n"
             "• `/welcome edit [Welcome Message/Rules] [text]`: Property updates.\n"
@@ -1076,10 +1076,10 @@ class Utilities(commands.Cog):
             "• `/remind set` / `/remind list`: Scheduler reminders."
         ]
         
-        paginator = CynexCloudPaginationContainer("CynexCloud Help Menu", pages, interaction.user.id)
+        paginator = BreezePaginationContainer("Breeze Help Menu", pages, interaction.user.id)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
-    @app_commands.command(name="botinfo", description="Show information about the CynexCloud bot")
+    @app_commands.command(name="botinfo", description="Show information about the Breeze bot")
     async def botinfo(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("botinfo", interaction)
@@ -1087,8 +1087,8 @@ class Utilities(commands.Cog):
         guilds_count = len(self.bot.guilds)
         users_count = sum(g.member_count for g in self.bot.guilds)
         
-        card = CynexCloudInfoContainer("Bot Statistics Card", "Core framework configurations.")
-        card.add_section("Developer Team", "`CynexCloud Developer Team`")
+        card = BreezeInfoContainer("Bot Statistics Card", "Core framework configurations.")
+        card.add_section("Developer Team", "`Breeze Developer Team`")
         card.add_section("Framework Library", "`discord.py v2.7.1` (Python 3.13)")
         card.add_section("Total Server Guilds", f"`{guilds_count}` servers")
         card.add_section("Total Users Served", f"`{users_count}` members")
@@ -1107,7 +1107,7 @@ class Utilities(commands.Cog):
         minutes, seconds = divmod(remainder, 60)
         
         time_str = f"`{days}d {hours}h {minutes}m {seconds}s`"
-        card = CynexCloudInfoContainer("Bot System Uptime", f"The bot has been active for: {time_str}")
+        card = BreezeInfoContainer("Bot System Uptime", f"The bot has been active for: {time_str}")
         card.add_section("Startup Reference", f"Last Boot: <t:{int(self.bot.start_time.timestamp())}:F>")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
@@ -1140,20 +1140,20 @@ class Utilities(commands.Cog):
                 leave_row = await cursor.fetchone()
                 leaves = leave_row[0] if leave_row else 0
 
-        card = CynexCloudInfoContainer("Guild Analytics Report", f"Metrics logging from this server.")
+        card = BreezeInfoContainer("Guild Analytics Report", f"Metrics logging from this server.")
         card.add_section("Command Executions (Guild)", f"`{total_commands}` invocations")
         card.add_section("Most Popular Command", top_cmd)
         card.add_section("Join/Leave Metrics", f"📈 Member Joins: `{joins}`\n📉 Member Leaves: `{leaves}`")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
-    @app_commands.command(name="invite", description="Get the invite link for CynexCloud")
+    @app_commands.command(name="invite", description="Get the invite link for Breeze")
     async def command_invite(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("invite", interaction)
         
         link = f"https://discord.com/api/oauth2/authorize?client_id={self.bot.user.id}&permissions=8&scope=bot%20applications.commands"
-        card = CynexCloudSuccessContainer("Bot Invitation Link", f"You can invite the bot to other guilds using the button or link below.")
-        card.add_section("OAuth2 Link", f"[Authorize CynexCloud Bot]({link})")
+        card = BreezeSuccessContainer("Bot Invitation Link", f"You can invite the bot to other guilds using the button or link below.")
+        card.add_section("OAuth2 Link", f"[Authorize Breeze Bot]({link})")
         
         btn = Button(label="Invite Bot", style=discord.ButtonStyle.link, url=link)
         card.add_buttons(btn)
@@ -1164,8 +1164,8 @@ class Utilities(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("support", interaction)
         
-        url = "https://discord.gg/cynexcloud"
-        card = CynexCloudInfoContainer("CynexCloud Help Desk Support", f"Need help setting up systems or reporting bugs? Join our support server.")
+        url = "https://discord.gg/breeze"
+        card = BreezeInfoContainer("Breeze Help Desk Support", f"Need help setting up systems or reporting bugs? Join our support server.")
         card.add_section("Support Link", f"[Join Support Server]({url})")
         
         btn = Button(label="Join Server", style=discord.ButtonStyle.link, url=url)
@@ -1177,9 +1177,9 @@ class Utilities(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("about", interaction)
         
-        card = CynexCloudInfoContainer(
-            "About CynexCloud Support Bot",
-            "CynexCloud is an enterprise-grade utility, ticket, suggestion, and review bot. "
+        card = BreezeInfoContainer(
+            "About Breeze Support Bot",
+            "Breeze is an enterprise-grade utility, ticket, suggestion, and review bot. "
             "It is styled strictly utilizing Discord's modern Components V2 rendering layouts (Containers, sections, action rows, and text displays), "
             "providing a seamless and completely consistent server experience."
         )
@@ -1191,8 +1191,8 @@ class Utilities(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("vote", interaction)
         
-        url = "https://top.gg/bot/cynexcloud"
-        card = CynexCloudSuccessContainer("Vote for CynexCloud", "Support the development by voting for us!")
+        url = "https://top.gg/bot/breeze"
+        card = BreezeSuccessContainer("Vote for Breeze", "Support the development by voting for us!")
         card.add_section("Top.gg Link", f"[Vote Here]({url})")
         
         btn = Button(label="Vote", style=discord.ButtonStyle.link, url=url)
@@ -1205,11 +1205,11 @@ class Utilities(commands.Cog):
         await log_command_usage("links", interaction)
         
         invite = f"https://discord.com/api/oauth2/authorize?client_id={self.bot.user.id}&permissions=8&scope=bot%20applications.commands"
-        support = "https://discord.gg/cynexcloud"
-        website = "https://cynexcloud.dev"
-        vote = "https://top.gg/bot/cynexcloud"
+        support = "https://discord.gg/breeze"
+        website = "https://breeze.dev"
+        vote = "https://top.gg/bot/breeze"
         
-        card = CynexCloudInfoContainer("CynexCloud Directory Links", "Useful official references.")
+        card = BreezeInfoContainer("Breeze Directory Links", "Useful official references.")
         card.add_section("Web Portal", f"🌐 [Website]({website})")
         card.add_section("OAuth Invite", f"🎫 [Authorize Bot]({invite})")
         card.add_section("Help Desk", f"📢 [Support Server]({support})")
@@ -1242,7 +1242,7 @@ class Utilities(commands.Cog):
 
         if mod_ch:
             try:
-                card = CynexCloudWarningContainer("Incident Report Filed", f"Report submitted by {interaction.user.mention}")
+                card = BreezeWarningContainer("Incident Report Filed", f"Report submitted by {interaction.user.mention}")
                 card.add_section("Reporter", f"{interaction.user} (`{interaction.user.id}`)")
                 card.add_section("Report details", issue)
                 card.add_section("Channel Reference", interaction.channel.mention)
@@ -1250,7 +1250,7 @@ class Utilities(commands.Cog):
             except Exception:
                 pass
 
-        success = CynexCloudSuccessContainer("Report Filed Successfully", "Moderators have been notified about this incident.")
+        success = BreezeSuccessContainer("Report Filed Successfully", "Moderators have been notified about this incident.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="calculator", description="Solve mathematical expressions securely")
@@ -1261,18 +1261,18 @@ class Utilities(commands.Cog):
         
         safe_chars = set("0123456789+-*/(). ")
         if not all(c in safe_chars for c in expression):
-            err = CynexCloudErrorContainer("Security Blocked", "Only digits and standard operators (`+`, `-`, `*`, `/`, `(`, `)`) are allowed.")
+            err = BreezeErrorContainer("Security Blocked", "Only digits and standard operators (`+`, `-`, `*`, `/`, `(`, `)`) are allowed.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         try:
             # Safe evaluation
             res = eval(expression, {"__builtins__": None}, {})
-            card = CynexCloudSuccessContainer("Mathematical Solver", f"Solved expression: `{expression}`")
+            card = BreezeSuccessContainer("Mathematical Solver", f"Solved expression: `{expression}`")
             card.add_section("Result Output", f"`{res}`")
             await interaction.followup.send(view=card.build(), ephemeral=True)
         except Exception as e:
-            err = CynexCloudErrorContainer("Solver Error", f"Failed to compute math expression: {e}")
+            err = BreezeErrorContainer("Solver Error", f"Failed to compute math expression: {e}")
             await interaction.followup.send(view=err.build(), ephemeral=True)
 
     @app_commands.command(name="weather", description="Query current weather stats for a location")
@@ -1294,7 +1294,7 @@ class Utilities(commands.Cog):
                         humidity = current["humidity"]
                         wind = current["windspeedKmph"]
                         
-                        info = CynexCloudInfoContainer(f"Weather Report: {location.title()}", f"Current conditions at your target location.")
+                        info = BreezeInfoContainer(f"Weather Report: {location.title()}", f"Current conditions at your target location.")
                         info.add_section("Temperature", f"`{temp_c}°C` / `{temp_f}°F`")
                         info.add_section("Conditions", desc.title())
                         info.add_section("Humidity", f"`{humidity}%`")
@@ -1305,7 +1305,7 @@ class Utilities(commands.Cog):
             pass
             
         # Fallback
-        info = CynexCloudWarningContainer(f"Weather Report: {location.title()}", "Weather query timed out. Showing typical climate report.")
+        info = BreezeWarningContainer(f"Weather Report: {location.title()}", "Weather query timed out. Showing typical climate report.")
         info.add_section("Temperature", "`22.0°C` / `71.6°F`")
         info.add_section("Conditions", "Partly Cloudy")
         info.add_section("Humidity", "`50%`")
@@ -1326,7 +1326,7 @@ class Utilities(commands.Cog):
                         data = await response.json()
                         translated = "".join([sentence[0] for sentence in data[0] if sentence[0]])
                         
-                        info = CynexCloudSuccessContainer("Translation Complete", f"Language translations auto to `{target_lang}`.")
+                        info = BreezeSuccessContainer("Translation Complete", f"Language translations auto to `{target_lang}`.")
                         info.add_section("Input String", text)
                         info.add_section("Translated String", translated)
                         await interaction.followup.send(view=info.build(), ephemeral=True)
@@ -1334,7 +1334,7 @@ class Utilities(commands.Cog):
         except Exception:
             pass
             
-        info = CynexCloudWarningContainer("Translation Failure", "Google translation requests failed. Outputting fallback mock.")
+        info = BreezeWarningContainer("Translation Failure", "Google translation requests failed. Outputting fallback mock.")
         info.add_section("Input", text)
         info.add_section("Translated Fallback", f"Translated to {target_lang}: {text}")
         await interaction.followup.send(view=info.build(), ephemeral=True)
@@ -1354,13 +1354,13 @@ class Utilities(commands.Cog):
                 try:
                     dt = datetime.strptime(time_str.strip(), '%Y-%m-%d')
                 except Exception:
-                    err = CynexCloudErrorContainer("Parsing Error", "Invalid time format. Please use `YYYY-MM-DD HH:MM` or `YYYY-MM-DD` or `now`.")
+                    err = BreezeErrorContainer("Parsing Error", "Invalid time format. Please use `YYYY-MM-DD HH:MM` or `YYYY-MM-DD` or `now`.")
                     await interaction.followup.send(view=err.build(), ephemeral=True)
                     return
                     
         epoch = int(dt.timestamp())
         
-        info = CynexCloudInfoContainer(f"Timestamp Generator: {dt.strftime('%Y-%m-%d %H:%M')}", "Copy the desired raw format code to display dynamic timestamps in server posts.")
+        info = BreezeInfoContainer(f"Timestamp Generator: {dt.strftime('%Y-%m-%d %H:%M')}", "Copy the desired raw format code to display dynamic timestamps in server posts.")
         info.add_section("Relative Time (R)", f"`<t:{epoch}:R>` → <t:{epoch}:R>")
         info.add_section("Short Time (t)", f"`<t:{epoch}:t>` → <t:{epoch}:t>")
         info.add_section("Long Time (T)", f"`<t:{epoch}:T>` → <t:{epoch}:T>")
@@ -1390,7 +1390,7 @@ class Utilities(commands.Cog):
                             example = first["example"].replace("[", "").replace("]", "")
                             thumbs_up = first["thumbs_up"]
                             
-                            info = CynexCloudInfoContainer(f"Urban Dictionary: {word}", "Definition results.")
+                            info = BreezeInfoContainer(f"Urban Dictionary: {word}", "Definition results.")
                             info.add_section("Definition", definition[:1000])
                             if example:
                                 info.add_section("Example", example[:1000])
@@ -1400,7 +1400,7 @@ class Utilities(commands.Cog):
         except Exception:
             pass
             
-        err = CynexCloudErrorContainer("No Definition Found", f"Urban Dictionary search returned zero results for `{term}`.")
+        err = BreezeErrorContainer("No Definition Found", f"Urban Dictionary search returned zero results for `{term}`.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
 
     @app_commands.command(name="github", description="Query repository metrics on GitHub")
@@ -1410,7 +1410,7 @@ class Utilities(commands.Cog):
         await log_command_usage("github", interaction)
         
         url = f"https://api.github.com/repos/{repo}"
-        headers = {"User-Agent": "CynexCloudBot/1.0"}
+        headers = {"User-Agent": "BreezeBot/1.0"}
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers, timeout=5) as response:
@@ -1422,7 +1422,7 @@ class Utilities(commands.Cog):
                         forks = data["forks_count"]
                         issues = data["open_issues_count"]
                         
-                        info = CynexCloudInfoContainer(f"GitHub: {name}", desc)
+                        info = BreezeInfoContainer(f"GitHub: {name}", desc)
                         info.add_section("Stargazers", f"⭐ `{stars}`")
                         info.add_section("Forks Count", f"🍴 `{forks}`")
                         info.add_section("Open Issues", f"🐛 `{issues}`")
@@ -1431,7 +1431,7 @@ class Utilities(commands.Cog):
         except Exception:
             pass
             
-        err = CynexCloudErrorContainer("Repo Offline", f"Could not find or retrieve details for GitHub repository `{repo}`.")
+        err = BreezeErrorContainer("Repo Offline", f"Could not find or retrieve details for GitHub repository `{repo}`.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
 
     @app_commands.command(name="qr", description="Generate a QR code image link")
@@ -1441,7 +1441,7 @@ class Utilities(commands.Cog):
         await log_command_usage("qr", interaction)
         
         qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(text)}"
-        card = CynexCloudInfoContainer(f"QR Code Generator")
+        card = BreezeInfoContainer(f"QR Code Generator")
         card.add_section("Encoded Content", f"`{text}`")
         card.layout.add_item(MediaGallery(MediaGalleryItem(qr_url)))
         await interaction.followup.send(view=card.build(), ephemeral=True)
@@ -1458,7 +1458,7 @@ class Utilities(commands.Cog):
                 async with session.get(api_url, timeout=5) as response:
                     if response.status == 200:
                         short_url = await response.text()
-                        info = CynexCloudSuccessContainer("URL Link Shortened", "Long URL formatted successfully.")
+                        info = BreezeSuccessContainer("URL Link Shortened", "Long URL formatted successfully.")
                         info.add_section("Original Link", url)
                         info.add_section("TinyURL Link", short_url)
                         await interaction.followup.send(view=info.build(), ephemeral=True)
@@ -1466,7 +1466,7 @@ class Utilities(commands.Cog):
         except Exception:
             pass
             
-        err = CynexCloudErrorContainer("API Error", "Failed to shorten URL. Make sure it is formatted correctly.")
+        err = BreezeErrorContainer("API Error", "Failed to shorten URL. Make sure it is formatted correctly.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
 
     async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -1483,7 +1483,7 @@ class Utilities(commands.Cog):
         elif isinstance(error, app_commands.CommandOnCooldown):
             msg = f"⏳ Command is on cooldown. Try again in `{error.retry_after:.1f}s`."
             
-        err_card = CynexCloudErrorContainer("Command Execution Failed", msg)
+        err_card = BreezeErrorContainer("Command Execution Failed", msg)
         try:
             if not interaction.response.is_done():
                 await interaction.response.send_message(view=err_card.build(), ephemeral=True)
@@ -1541,7 +1541,7 @@ class StickyGroup(app_commands.Group, name="sticky"):
             )
             await db.commit()
             
-        success = CynexCloudSuccessContainer("Sticky Message Posted", "Sticky message created successfully and pinned.")
+        success = BreezeSuccessContainer("Sticky Message Posted", "Sticky message created successfully and pinned.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="delete", description="Delete the sticky message in this channel")
@@ -1552,7 +1552,7 @@ class StickyGroup(app_commands.Group, name="sticky"):
         channel_id = interaction.channel.id
         
         if channel_id not in self.cog.sticky_messages:
-            err = CynexCloudErrorContainer("Not Found", "There is no active sticky message configured in this channel.")
+            err = BreezeErrorContainer("Not Found", "There is no active sticky message configured in this channel.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
@@ -1569,7 +1569,7 @@ class StickyGroup(app_commands.Group, name="sticky"):
                 pass
                 
         self.cog.sticky_messages.pop(channel_id, None)
-        success = CynexCloudSuccessContainer("Sticky Message Deleted", "Sticky banner removed successfully.")
+        success = BreezeSuccessContainer("Sticky Message Deleted", "Sticky banner removed successfully.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="list", description="List all active sticky messages in this server")
@@ -1584,7 +1584,7 @@ class StickyGroup(app_commands.Group, name="sticky"):
                 rows = await cursor.fetchall()
                 
         if not rows:
-            info = CynexCloudInfoContainer("No Sticky Messages", "There are no active sticky messages configured on this server.")
+            info = BreezeInfoContainer("No Sticky Messages", "There are no active sticky messages configured on this server.")
             await interaction.followup.send(view=info.build(), ephemeral=True)
             return
             
@@ -1597,7 +1597,7 @@ class StickyGroup(app_commands.Group, name="sticky"):
                 f"**Text:** {r[1]}"
             )
             
-        paginator = CynexCloudPaginationContainer("Server Sticky Messages", pages, interaction.user.id, accent_color=16776960)
+        paginator = BreezePaginationContainer("Server Sticky Messages", pages, interaction.user.id, accent_color=16776960)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1616,7 +1616,7 @@ class RemindGroup(app_commands.Group, name="remind"):
         await log_command_usage("remind set", interaction)
         seconds = parse_duration(duration)
         if not seconds:
-            err = CynexCloudErrorContainer("Invalid Duration", "Please specify a correct duration tag like `10m`, `2h`, `1d`.")
+            err = BreezeErrorContainer("Invalid Duration", "Please specify a correct duration tag like `10m`, `2h`, `1d`.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
@@ -1635,7 +1635,7 @@ class RemindGroup(app_commands.Group, name="remind"):
             await db.commit()
             
         timestamp_epoch = int(target_dt.timestamp())
-        success = CynexCloudSuccessContainer("Reminder Registered", f"Reminder alert successfully scheduled.")
+        success = BreezeSuccessContainer("Reminder Registered", f"Reminder alert successfully scheduled.")
         success.add_section("Alert Time", f"<t:{timestamp_epoch}:F> (<t:{timestamp_epoch}:R>)")
         success.add_section("Reminder Text", text)
         await interaction.followup.send(view=success.build(), ephemeral=True)
@@ -1654,7 +1654,7 @@ class RemindGroup(app_commands.Group, name="remind"):
                 rows = await cursor.fetchall()
                 
         if not rows:
-            info = CynexCloudInfoContainer("No Reminders", "You have no active reminders scheduled.")
+            info = BreezeInfoContainer("No Reminders", "You have no active reminders scheduled.")
             await interaction.followup.send(view=info.build(), ephemeral=True)
             return
             
@@ -1677,7 +1677,7 @@ class RemindGroup(app_commands.Group, name="remind"):
                 f"**Reminder Content:** {rem_text}"
             )
             
-        paginator = CynexCloudPaginationContainer("Your Scheduled Reminders", pages, interaction.user.id)
+        paginator = BreezePaginationContainer("Your Scheduled Reminders", pages, interaction.user.id)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
     @app_commands.command(name="delete", description="Delete an active reminder by ID")
@@ -1691,13 +1691,13 @@ class RemindGroup(app_commands.Group, name="remind"):
             async with db.execute("SELECT 1 FROM reminders WHERE id = ? AND user_id = ?", (id, user_id)) as cursor:
                 row = await cursor.fetchone()
             if not row:
-                err = CynexCloudErrorContainer("Not Found", f"Reminder `{id}` was not found or doesn't belong to you.")
+                err = BreezeErrorContainer("Not Found", f"Reminder `{id}` was not found or doesn't belong to you.")
                 await interaction.followup.send(view=err.build(), ephemeral=True)
                 return
             await db.execute("DELETE FROM reminders WHERE id = ?", (id,))
             await db.commit()
             
-        success = CynexCloudSuccessContainer("Reminder Deleted", f"Reminder `{id}` cleared successfully.")
+        success = BreezeSuccessContainer("Reminder Deleted", f"Reminder `{id}` cleared successfully.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="clear", description="Clear all of your active reminders")
@@ -1710,7 +1710,7 @@ class RemindGroup(app_commands.Group, name="remind"):
             await db.execute("DELETE FROM reminders WHERE user_id = ?", (user_id,))
             await db.commit()
             
-        success = CynexCloudSuccessContainer("Reminders Cleared", "All personal active reminders have been deleted.")
+        success = BreezeSuccessContainer("Reminders Cleared", "All personal active reminders have been deleted.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════════════

@@ -23,16 +23,17 @@ from discord.ui import (
     Button
 )
 from discord import MediaGalleryItem, SeparatorSpacing
+from ui import BreezeInfoContainer
 
-logger = logging.getLogger("CynexCloud.Tickets")
-DB_PATH = "cynex.db"
+logger = logging.getLogger("Breeze.Tickets")
+DB_PATH = "breeze.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # DATABASE SCHEMAS & INITIALIZATION
 # ══════════════════════════════════════════════════════════════════════
 
 async def init_ticket_db():
-    """Initializes SQLite tables in cynex.db if they do not exist."""
+    """Initializes SQLite tables in breeze.db if they do not exist."""
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL")
         # Support tickets table (with claimed and sequential number indexing)
@@ -487,7 +488,7 @@ class GlobalTicketPanelView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-    @discord.ui.button(label="Create Ticket", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:create_ticket", emoji="🎫")
+    @discord.ui.button(label="Create Ticket", style=discord.ButtonStyle.secondary, custom_id="breeze:create_ticket", emoji="🎫")
     async def create_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             panel = await get_ticket_panel(str(interaction.message.id))
@@ -684,10 +685,10 @@ class OpenTicketModal(discord.ui.Modal):
             
             # Action Row containing Close, Claim, Transcript, Delete buttons
             welcome_row = ActionRow(
-                Button(label="Close", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:close_ticket", emoji="🔒"),
-                Button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:claim_ticket", emoji="👤"),
-                Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:transcript_ticket", emoji="📄"),
-                Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:delete_ticket", emoji="🗑")
+                Button(label="Close", style=discord.ButtonStyle.secondary, custom_id="breeze:close_ticket", emoji="🔒"),
+                Button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="breeze:claim_ticket", emoji="👤"),
+                Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket", emoji="📄"),
+                Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket", emoji="🗑")
             )
             root_container.add_item(welcome_row)
             
@@ -718,7 +719,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-    @discord.ui.button(label="Close", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:close_ticket", emoji="🔒")
+    @discord.ui.button(label="Close", style=discord.ButtonStyle.secondary, custom_id="breeze:close_ticket", emoji="🔒")
     async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -750,7 +751,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             ))
             root_container.add_item(Separator())
             
-            reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:reopen_ticket")
+            reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="breeze:reopen_ticket")
             root_container.add_item(Section(
                 "Manage Closed Ticket",
                 "Reopen the channel or trigger transcript generation.",
@@ -770,7 +771,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             else:
                 await interaction.followup.send(msg, ephemeral=True)
 
-    @discord.ui.button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:claim_ticket", emoji="👤")
+    @discord.ui.button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="breeze:claim_ticket", emoji="👤")
     async def claim_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -799,7 +800,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             root_container.add_item(TextDisplay(f"👤 **Ticket claimed by {user.mention}.**\nThis staff member will now assist you."))
             root_container.add_item(Separator())
             
-            unclaim_btn = Button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:unclaim_ticket")
+            unclaim_btn = Button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="breeze:unclaim_ticket")
             root_container.add_item(Section(
                 "Claim Actions",
                 "Staff can release this ticket if needed.",
@@ -819,7 +820,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             else:
                 await interaction.followup.send(msg, ephemeral=True)
 
-    @discord.ui.button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:transcript_ticket", emoji="📄")
+    @discord.ui.button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket", emoji="📄")
     async def transcript_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -867,7 +868,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             else:
                 await interaction.followup.send(msg, ephemeral=True)
 
-    @discord.ui.button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:delete_ticket", emoji="🗑")
+    @discord.ui.button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket", emoji="🗑")
     async def delete_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             channel = interaction.channel
@@ -946,7 +947,7 @@ class GlobalTicketControlView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-    @discord.ui.button(label="Reopen", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:reopen_ticket", emoji="🔓")
+    @discord.ui.button(label="Reopen", style=discord.ButtonStyle.secondary, custom_id="breeze:reopen_ticket", emoji="🔓")
     async def reopen(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -989,7 +990,7 @@ class GlobalTicketControlView(discord.ui.View):
             else:
                 await interaction.followup.send(msg, ephemeral=True)
 
-    @discord.ui.button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:unclaim_ticket", emoji="👤")
+    @discord.ui.button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="breeze:unclaim_ticket", emoji="👤")
     async def unclaim(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -1049,7 +1050,7 @@ class TicketPanelBuilderView(discord.ui.View):
         self.user_id = user_id
         self.guild_id = guild_id
         self.config = {
-            "title": "CynexCloud Support System",
+            "title": "Breeze Support System",
             "description": "Click the button below to get help from our support team.",
             "accent_color": "#206694",
             "categories": [],
@@ -1068,7 +1069,7 @@ class TicketPanelBuilderView(discord.ui.View):
     async def update_view(self, interaction: discord.Interaction):
         try:
             embed = discord.Embed(
-                title="🎫 CynexCloud Ticket Panel Builder 🎫",
+                title="🎫 Breeze Ticket Panel Builder 🎫",
                 description="Design your Components V2 support ticket panels visually.",
                 color=discord.Color.green()
             )
@@ -1290,7 +1291,7 @@ class PublishPanelButton(discord.ui.Button):
                 
             # Create button row
             root.add_item(ActionRow(
-                Button(label="Create Ticket", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:create_ticket", emoji="🎫")
+                Button(label="Create Ticket", style=discord.ButtonStyle.secondary, custom_id="breeze:create_ticket", emoji="🎫")
             ))
             
             v2_view.add_item(root)
@@ -1327,7 +1328,7 @@ class PublishPanelButton(discord.ui.Button):
 
 class TicketGroup(app_commands.Group, name="ticket"):
     def __init__(self, bot: commands.Bot):
-        super().__init__(description="CynexCloud Support Ticket commands")
+        super().__init__(description="Breeze Support Ticket commands")
         self.bot = bot
         
     @app_commands.command(name="setup", description="Configure server support ticket settings")
@@ -1379,7 +1380,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
             view.setup_items()
             
             embed = discord.Embed(
-                title="🎫 CynexCloud Ticket Panel Builder 🎫",
+                title="🎫 Breeze Ticket Panel Builder 🎫",
                 description="Design your Components V2 support ticket panels visually.",
                 color=discord.Color.green()
             )
@@ -1429,7 +1430,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
             ))
             root_container.add_item(Separator())
             
-            reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="cynexcloud:reopen_ticket")
+            reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="breeze:reopen_ticket")
             root_container.add_item(Section(
                 "Manage Closed Ticket",
                 "Reopen the channel or trigger transcript generation.",
@@ -1739,7 +1740,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
                 await interaction.response.send_message("📂 No open tickets in this guild.", ephemeral=True)
                 return
                 
-            embed = discord.Embed(title="📂 Open Support Tickets", color=discord.Color.orange())
+            card = BreezeInfoContainer("Open Support Tickets", "List of all active support tickets.")
             desc = ""
             for idx, t in enumerate(tickets_list, 1):
                 creator = guild.get_member(int(t['user_id']))
@@ -1747,10 +1748,10 @@ class TicketGroup(app_commands.Group, name="ticket"):
                 channel = guild.get_channel(int(t['channel_id']))
                 chan_mention = channel.mention if channel else f"`{t['channel_id']}`"
                 
-                desc += f"`{idx}.` **{t['ticket_id']}** — {chan_mention} by {creator_mention}\n• Category: `{t['category']}` | Subject: `{t['subject']}`\n"
+                desc += f"`{idx}.` **{t['ticket_id']}** — {chan_mention} by {creator_mention}\n• Category: `{t['category']}` | Subject: `{t['subject']}`\n\n"
                 
-            embed.description = desc
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            card.add_section("Active Tickets Queue", desc)
+            await interaction.response.send_message(view=card.build(), ephemeral=True)
         except Exception as e:
             logger.exception("Error in /ticket list:")
             if not interaction.response.is_done():
@@ -1781,16 +1782,13 @@ class TicketGroup(app_commands.Group, name="ticket"):
                 async with conn.execute("SELECT COUNT(*) FROM tickets WHERE guild_id = ? AND claimed_by IS NOT NULL", (guild_id,)) as cursor:
                     claimed = (await cursor.fetchone())[0]
                     
-            embed = discord.Embed(
-                title="📊 CynexCloud Support Ticket Statistics",
-                color=discord.Color.green()
-            )
-            embed.add_field(name="Open Tickets", value=f"`{open_count}`", inline=True)
-            embed.add_field(name="Closed Tickets", value=f"`{closed}`", inline=True)
-            embed.add_field(name="Claimed Tickets", value=f"`{claimed}`", inline=True)
-            embed.add_field(name="Total Tickets Created", value=f"`{total}`", inline=True)
+            card = BreezeInfoContainer("Support Ticket Statistics", "Historical metrics for support tickets in this server.")
+            card.add_section("Open Tickets", f"`{open_count}`")
+            card.add_section("Closed Tickets", f"`{closed}`")
+            card.add_section("Claimed Tickets", f"`{claimed}`")
+            card.add_section("Total Tickets Created", f"`{total}`")
             
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(view=card.build(), ephemeral=True)
         except Exception as e:
             logger.exception("Error in /ticket stats:")
             if not interaction.response.is_done():

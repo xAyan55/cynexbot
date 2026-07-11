@@ -20,21 +20,21 @@ from discord.ui import (
 
 import ui
 from ui import (
-    CynexCloudContainerBuilder,
-    CynexCloudSuccessContainer,
-    CynexCloudErrorContainer,
-    CynexCloudWarningContainer,
-    CynexCloudInfoContainer
+    BreezeContainerBuilder,
+    BreezeSuccessContainer,
+    BreezeErrorContainer,
+    BreezeWarningContainer,
+    BreezeInfoContainer
 )
 
-logger = logging.getLogger("CynexCloud.Welcome")
-DB_PATH = "cynex.db"
+logger = logging.getLogger("Breeze.Welcome")
+DB_PATH = "breeze.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # WELCOME VARIABLE HELPER
 # ══════════════════════════════════════════════════════════════════════
 
-def translate_welcome_variables(text: str, member: discord.Member) -> str:
+async def translate_welcome_variables(text: str, member: discord.Member) -> str:
     """Translates placeholder brackets with dynamic member details."""
     if not text:
         return ""
@@ -46,19 +46,96 @@ def translate_welcome_variables(text: str, member: discord.Member) -> str:
     joined_epoch = int(joined_at.timestamp())
     joined_str = f"<t:{joined_epoch}:F> (<t:{joined_epoch}:R>)"
     
+    now_epoch = int(datetime.now(timezone.utc).timestamp())
+    
+    # Calculate stats
+    humans_count = sum(1 for m in member.guild.members if not m.bot)
+    bots_count = sum(1 for m in member.guild.members if m.bot)
+    
+    # Try to fetch invite data from DB
+    inviter_name = "Unknown"
+    inviter_mention = "Unknown"
+    invite_code = "Unknown"
+    invite_uses = "0"
+    
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT inviter_user_id, invite_code FROM invited_by WHERE guild_id = ? AND invited_user_id = ?", (str(member.guild.id), str(member.id))) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                inv_id, invite_code = row
+                if inv_id == "Vanity URL":
+                    inviter_name = "Vanity URL"
+                    inviter_mention = "Vanity URL"
+                elif inv_id != "Unknown":
+                    # Try to fetch inviter object
+                    inv_user = member.guild.get_member(int(inv_id))
+                    if not inv_user:
+                        try:
+                            inv_user = await member.guild.fetch_member(int(inv_id))
+                        except Exception:
+                            pass
+                    if inv_user:
+                        inviter_name = str(inv_user)
+                        inviter_mention = inv_user.mention
+                    else:
+                        inviter_name = f"User ID: {inv_id}"
+                        inviter_mention = f"<@{inv_id}>"
+
+        # Fetch invite uses if invite code is known
+        if invite_code != "Unknown":
+            if inviter_name == "Vanity URL":
+                try:
+                    vanity = await member.guild.vanity_invite()
+                    invite_uses = str(vanity.uses)
+                except Exception:
+                    pass
+            else:
+                async with db.execute("SELECT COUNT(*) FROM invited_by WHERE guild_id = ? AND invite_code = ?", (str(member.guild.id), invite_code)) as c:
+                    uses_row = await c.fetchone()
+                    invite_uses = str(uses_row[0]) if uses_row else "0"
+                    
     replacements = {
+        # Member placeholders
         "{user}": str(member),
+        "{user.name}": member.name,
+        "{user.mention}": member.mention,
+        "{user.id}": str(member.id),
+        "{user.avatar}": member.display_avatar.url if member.display_avatar else "",
+        "{user.created_at}": f"<t:{created_epoch}:F>",
         "{username}": member.name,
-        "{server}": member.guild.name,
-        "{membercount}": str(member.guild.member_count),
         "{mention}": member.mention,
         "{created}": created_str,
-        "{joined}": joined_str
+        
+        # Server placeholders
+        "{server}": member.guild.name,
+        "{server.name}": member.guild.name,
+        "{server.id}": str(member.guild.id),
+        "{server.member_count}": str(member.guild.member_count),
+        "{server.boosts}": str(member.guild.premium_subscription_count),
+        "{server.boost_level}": str(member.guild.premium_tier),
+        
+        # Invite placeholders
+        "{inviter}": inviter_name,
+        "{inviter.mention}": inviter_mention,
+        "{invite.code}": invite_code,
+        "{invite.uses}": invite_uses,
+        
+        # Time placeholders
+        "{time}": f"<t:{now_epoch}:T>",
+        "{date}": f"<t:{now_epoch}:d>",
+        "{joined_at}": f"<t:{joined_epoch}:F>",
+        "{joined}": joined_str,
+        
+        # Statistics placeholders
+        "{membercount}": str(member.guild.member_count),
+        "{humans}": str(humans_count),
+        "{bots}": str(bots_count)
     }
     
     for key, val in replacements.items():
         text = text.replace(key, val)
     return text
+
 
 # ══════════════════════════════════════════════════════════════════════
 # PUBLIC WELCOME INTERACTION CALLBACK
@@ -66,7 +143,7 @@ def translate_welcome_variables(text: str, member: discord.Member) -> str:
 
 async def on_interaction(interaction: discord.Interaction):
     custom_id = interaction.data.get("custom_id") if interaction.data else None
-    if not custom_id or not custom_id.startswith("cynexcloud:welcome:"):
+    if not custom_id or not custom_id.startswith("breeze:welcome:"):
         return
 
     action = custom_id.split(":")[2]
@@ -78,28 +155,28 @@ async def on_interaction(interaction: discord.Interaction):
                 row = await cursor.fetchone()
                 
         rules_text = row[0] if row and row[0] else "📜 Please check the server rules channels for details."
-        info = CynexCloudInfoContainer("Server Rules", rules_text)
+        info = BreezeInfoContainer("Server Rules", rules_text)
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "support":
         # Check if tickets system is loaded
         tickets_cog = interaction.client.get_cog("TicketGroup") # app commands group is not a Cog, tickets is usually registered
         # We can send information about tickets
-        info = CynexCloudInfoContainer(
-            "CynexCloud Help Desk Support",
+        info = BreezeInfoContainer(
+            "Breeze Help Desk Support",
             "🎫 Need assistance? Run the `/ticket panel` or `/ticket setup` command to contact staff."
         )
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "website":
-        info = CynexCloudInfoContainer(
-            "CynexCloud Web Portal",
-            "🌐 Visit our official web site at: **https://cynexcloud.dev**"
+        info = BreezeInfoContainer(
+            "Breeze Web Portal",
+            "🌐 Visit our official web site at: **https://breeze.dev**"
         )
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "announce":
-        info = CynexCloudInfoContainer(
+        info = BreezeInfoContainer(
             "📢 Server Announcements",
             "To stay updated, check our announcement channels and enable notifications!"
         )
@@ -228,7 +305,7 @@ class Welcome(commands.Cog):
                 pass
             if log_ch:
                 try:
-                    log_layout = CynexCloudInfoContainer(
+                    log_layout = BreezeInfoContainer(
                         "Member Joined",
                         f"👤 {member.mention} (`{member.name}` / `{member.id}`)\n"
                         f"• Account: <t:{int(member.created_at.timestamp())}:F>\n"
@@ -245,11 +322,19 @@ class Welcome(commands.Cog):
                 role = member.guild.get_role(int(role_id))
                 if role:
                     try:
-                        await member.add_roles(role, reason="CynexCloud Welcome Auto-Role Assignment")
+                        await member.add_roles(role, reason="Breeze Welcome Auto-Role Assignment")
                     except Exception as role_err:
                         logger.warning(f"Failed to assign auto-role {role_id} to {member}: {role_err}")
 
-        # 6. Construct V2 Welcome Container Message
+        # 6. Wait for InviteTracker to write invite details to DB
+        for _ in range(4):
+            async with aiosqlite.connect(DB_PATH) as db:
+                async with db.execute("SELECT 1 FROM invited_by WHERE guild_id = ? AND invited_user_id = ?", (guild_id, user_id)) as cursor:
+                    if await cursor.fetchone():
+                        break
+            await asyncio.sleep(0.5)
+
+        # 7. Construct V2 Welcome Container Message
         default_welcome = (
             "👋 **Welcome {mention} to {server}!**\n"
             "We are thrilled to have you join our community.\n\n"
@@ -260,17 +345,17 @@ class Welcome(commands.Cog):
             "*We now have {membercount} members!*"
         )
         welcome_txt = settings["welcome_message"] or default_welcome
-        translated_msg = translate_welcome_variables(welcome_txt, member)
+        translated_msg = await translate_welcome_variables(welcome_txt, member)
 
-        welcome_layout = CynexCloudContainerBuilder(f"Welcome to {member.guild.name}!", accent_color=3447003)
+        welcome_layout = BreezeContainerBuilder(f"Welcome to {member.guild.name}!", accent_color=3447003)
         welcome_layout.add_section("Greetings", translated_msg)
         welcome_layout.add_section("Server Information", f"You are member number **{member.guild.member_count}**.")
         welcome_layout.add_section("Rules & Guidelines", "Please click the **Rules** button below or check the server rules channels to ensure guidelines are followed.")
         
-        btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:welcome:rules:{member.id}")
-        btn_support = Button(label="🎫 Support", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:welcome:support:{member.id}")
-        btn_web = Button(label="🌐 Website", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:welcome:website:{member.id}")
-        btn_announce = Button(label="📢 Announcements", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:welcome:announce:{member.id}")
+        btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{member.id}")
+        btn_support = Button(label="🎫 Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{member.id}")
+        btn_web = Button(label="🌐 Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{member.id}")
+        btn_announce = Button(label="📢 Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{member.id}")
         welcome_layout.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
 
         # 7. Post Welcome Message
@@ -331,7 +416,7 @@ class Welcome(commands.Cog):
                 pass
             if log_ch:
                 try:
-                    log_layout = CynexCloudWarningContainer(
+                    log_layout = BreezeWarningContainer(
                         "Member Left",
                         f"👤 {member.mention} (`{member.name}` / `{member.id}`)\n"
                         f"We now have **{member.guild.member_count}** members."
@@ -344,7 +429,7 @@ class Welcome(commands.Cog):
     # WELCOME SLASH COMMANDS TREE (/welcome)
     # ══════════════════════════════════════════════════════════════════════
 
-    welcome_group = app_commands.Group(name="welcome", description="CynexCloud greeting and auto-roles setup panel")
+    welcome_group = app_commands.Group(name="welcome", description="Breeze greeting and auto-roles setup panel")
 
     @welcome_group.command(name="setup", description="Configure the welcome system")
     @app_commands.describe(
@@ -390,7 +475,7 @@ class Welcome(commands.Cog):
             )
             await db.commit()
 
-        success = CynexCloudSuccessContainer(
+        success = BreezeSuccessContainer(
             "Welcome System Configured",
             f"• Welcome channel: {channel.mention}\n"
             f"• DM system: `{'Enabled' if dm_enabled else 'Disabled'}`\n"
@@ -406,7 +491,7 @@ class Welcome(commands.Cog):
         
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = CynexCloudErrorContainer("Not Configured", "Welcome system is not set up on this server.")
+            err = BreezeErrorContainer("Not Configured", "Welcome system is not set up on this server.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -420,17 +505,17 @@ class Welcome(commands.Cog):
             "*We now have {membercount} members!*"
         )
         welcome_txt = settings["welcome_message"] or default_welcome
-        translated_msg = translate_welcome_variables(welcome_txt, interaction.user)
+        translated_msg = await translate_welcome_variables(welcome_txt, interaction.user)
 
-        welcome_layout = CynexCloudContainerBuilder(f"Welcome to {interaction.guild.name}!", accent_color=3447003)
+        welcome_layout = BreezeContainerBuilder(f"Welcome to {interaction.guild.name}!", accent_color=3447003)
         welcome_layout.add_section("Greetings", translated_msg)
         welcome_layout.add_section("Server Information", f"You are member number **{interaction.guild.member_count}**.")
         welcome_layout.add_section("Rules & Guidelines", "Please click the **Rules** button below or check the server rules channels to ensure guidelines are followed.")
         
-        btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:welcome:rules:{interaction.user.id}")
-        btn_support = Button(label="🎫 Support", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:welcome:support:{interaction.user.id}")
-        btn_web = Button(label="🌐 Website", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:welcome:website:{interaction.user.id}")
-        btn_announce = Button(label="📢 Announcements", style=discord.ButtonStyle.secondary, custom_id=f"cynexcloud:welcome:announce:{interaction.user.id}")
+        btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{interaction.user.id}")
+        btn_support = Button(label="🎫 Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{interaction.user.id}")
+        btn_web = Button(label="🌐 Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{interaction.user.id}")
+        btn_announce = Button(label="📢 Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{interaction.user.id}")
         welcome_layout.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
 
         await interaction.followup.send(view=welcome_layout.build(), ephemeral=True)
@@ -442,14 +527,14 @@ class Welcome(commands.Cog):
         
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = CynexCloudErrorContainer("Not Configured", "Welcome system is not set up on this server.")
+            err = BreezeErrorContainer("Not Configured", "Welcome system is not set up on this server.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
         # Fire member join listener logic on the caller
         await self.on_member_join(interaction.user)
         
-        success = CynexCloudSuccessContainer("Test Executed", "A test welcome banner has been generated. Please check DMs and the welcome channels.")
+        success = BreezeSuccessContainer("Test Executed", "A test welcome banner has been generated. Please check DMs and the welcome channels.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @welcome_group.command(name="disable", description="Disable welcome system greetings")
@@ -462,7 +547,7 @@ class Welcome(commands.Cog):
             await db.execute("DELETE FROM welcome_settings WHERE guild_id = ?", (guild_id,))
             await db.commit()
 
-        success = CynexCloudSuccessContainer("Welcome System Disabled", "The welcome system has been disabled and cleared.")
+        success = BreezeSuccessContainer("Welcome System Disabled", "The welcome system has been disabled and cleared.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @welcome_group.command(name="edit", description="Edit welcome message text or rules guidelines text")
@@ -481,7 +566,7 @@ class Welcome(commands.Cog):
         
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = CynexCloudErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
+            err = BreezeErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -492,7 +577,7 @@ class Welcome(commands.Cog):
                 await db.execute("UPDATE welcome_settings SET rules_text = ? WHERE guild_id = ?", (value, guild_id))
             await db.commit()
 
-        success = CynexCloudSuccessContainer("Welcome Property Updated", f"Property `{message_type}` set to: **{value}**")
+        success = BreezeSuccessContainer("Welcome Property Updated", f"Property `{message_type}` set to: **{value}**")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @welcome_group.command(name="premade", description="Apply a premade welcome message template")
@@ -512,7 +597,7 @@ class Welcome(commands.Cog):
         
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = CynexCloudErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
+            err = BreezeErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -532,7 +617,7 @@ class Welcome(commands.Cog):
                 "• Check out our billing panel and services list.\n"
                 "• Click **📜 Rules** to read our Terms of Service (ToS).\n"
                 "• Open a billing or support inquiry via **🎫 Support**.\n\n"
-                "Thank you for choosing CynexCloud! *Total clients: {membercount}*"
+                "Thank you for choosing Breeze! *Total clients: {membercount}*"
             ),
             "gaming": (
                 "🎮 **Welcome {mention} to the {server} lobby!**\n"
@@ -553,7 +638,7 @@ class Welcome(commands.Cog):
 
         selected_message = templates.get(template)
         if not selected_message:
-            err = CynexCloudErrorContainer("Invalid Template", "The requested template could not be found.")
+            err = BreezeErrorContainer("Invalid Template", "The requested template could not be found.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -561,10 +646,63 @@ class Welcome(commands.Cog):
             await db.execute("UPDATE welcome_settings SET welcome_message = ? WHERE guild_id = ?", (selected_message, guild_id))
             await db.commit()
 
-        preview_msg = translate_welcome_variables(selected_message, interaction.user)
-        success = CynexCloudSuccessContainer("Premade Welcome Message Applied", f"Theme `{template}` applied. Preview:")
+        preview_msg = await translate_welcome_variables(selected_message, interaction.user)
+        success = BreezeSuccessContainer("Premade Welcome Message Applied", f"Theme `{template}` applied. Preview:")
         success.add_section("Greetings Preview", preview_msg)
         await interaction.followup.send(view=success.build(), ephemeral=True)
+
+    @welcome_group.command(name="variables", description="Display every supported placeholder available for the welcome system")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def welcome_variables(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        
+        # Build the visual container organizing variables into categories
+        builder = BreezeContainerBuilder("Welcome Variables", "List of all supported placeholders you can use in your welcome messages.")
+        
+        builder.add_section("👤 Member Variables", 
+            "`{user}` — Full username (e.g. Username#0000)\n"
+            "`{user.name}` — Current username\n"
+            "`{user.mention}` — Mentions the joining user\n"
+            "`{user.id}` — Discord ID of the user\n"
+            "`{user.avatar}` — Avatar URL of the user\n"
+            "`{user.created_at}` — Account creation timestamp"
+        )
+        
+        builder.add_section("🍃 Server Variables",
+            "`{server}` or `{server.name}` — Server name\n"
+            "`{server.id}` — Server Discord ID\n"
+            "`{server.member_count}` — Total members count\n"
+            "`{server.boosts}` — Total server boosts\n"
+            "`{server.boost_level}` — Server boost level (tier)"
+        )
+        
+        builder.add_section("✉️ Invite Variables",
+            "`{inviter}` — Inviter's name or Vanity URL\n"
+            "`{inviter.mention}` — Inviter's mention or ID link\n"
+            "`{invite.code}` — The invite code used to join\n"
+            "`{invite.uses}` — Number of times that invite code was used"
+        )
+        
+        builder.add_section("⏰ Time Variables",
+            "`{time}` — Current timestamp (long time)\n"
+            "`{date}` — Current timestamp (short date)\n"
+            "`{joined_at}` — User's join timestamp"
+        )
+        
+        builder.add_section("📊 Statistics Variables",
+            "`{membercount}` — Total members in the server\n"
+            "`{humans}` — Count of human members\n"
+            "`{bots}` — Count of bot accounts"
+        )
+        
+        builder.add_section("⚠️ Legacy Support (Backward Compatible)",
+            "`{username}` ➔ Same as `{user.name}`\n"
+            "`{mention}` ➔ Same as `{user.mention}`\n"
+            "`{created}` ➔ Same as `{user.created_at}` with relative time\n"
+            "`{joined}` ➔ Same as `{joined_at}` with relative time"
+        )
+        
+        await interaction.followup.send(view=builder.build(), ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Welcome(bot))

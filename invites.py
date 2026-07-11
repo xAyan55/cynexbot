@@ -8,14 +8,14 @@ from discord import app_commands
 from discord.ext import commands
 
 from ui import (
-    CynexCloudSuccessContainer,
-    CynexCloudErrorContainer,
-    CynexCloudInfoContainer,
-    CynexCloudPaginationContainer
+    BreezeSuccessContainer,
+    BreezeErrorContainer,
+    BreezeInfoContainer,
+    BreezePaginationContainer
 )
 
-logger = logging.getLogger("CynexCloud.InviteTracker")
-DB_PATH = "cynex.db"
+logger = logging.getLogger("Breeze.InviteTracker")
+DB_PATH = "breeze.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # COG IMPLEMENTATION
@@ -213,21 +213,21 @@ class InviteTracker(commands.Cog):
         if not guild:
             return "This command can only be used inside servers."
         if not guild.me.guild_permissions.manage_guild:
-            return "❌ CynexCloud requires **Manage Server** permission to read and track server invites."
+            return "❌ Breeze requires **Manage Server** permission to read and track server invites."
         return None
 
     # ══════════════════════════════════════════════════════════════════════
     # SLASH COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    invites = app_commands.Group(name="invites", description="CynexCloud Server Invite tracking commands")
+    invites = app_commands.Group(name="invites", description="Breeze Server Invite tracking commands")
 
     @invites.command(name="me", description="View your server invite statistics")
     async def invites_me(self, interaction: discord.Interaction):
         await interaction.response.defer()
         err = self.check_bot_invite_permissions(interaction)
         if err:
-            card = CynexCloudErrorContainer("Missing Bot Permissions", err)
+            card = BreezeErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build())
             return
 
@@ -254,7 +254,7 @@ class InviteTracker(commands.Cog):
             f"• **Fake / New Accounts**: `{fake}`\n"
             f"• **Admin Bonus**: `{bonus}`"
         )
-        card = CynexCloudInfoContainer(f"Invite Stats for {interaction.user.name}", desc)
+        card = BreezeInfoContainer(f"Invite Stats for {interaction.user.name}", desc)
         await interaction.followup.send(view=card.build())
 
     @invites.command(name="stats", description="View invite statistics for a specific member")
@@ -262,7 +262,7 @@ class InviteTracker(commands.Cog):
         await interaction.response.defer()
         err = self.check_bot_invite_permissions(interaction)
         if err:
-            card = CynexCloudErrorContainer("Missing Bot Permissions", err)
+            card = BreezeErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build())
             return
 
@@ -288,7 +288,7 @@ class InviteTracker(commands.Cog):
             f"• **Fake / New Accounts**: `{fake}`\n"
             f"• **Admin Bonus**: `{bonus}`"
         )
-        card = CynexCloudInfoContainer(f"Invite Stats for {member.name}", desc)
+        card = BreezeInfoContainer(f"Invite Stats for {member.name}", desc)
         await interaction.followup.send(view=card.build())
 
     @invites.command(name="invited", description="View exactly who joined the server using a member's invites")
@@ -296,7 +296,7 @@ class InviteTracker(commands.Cog):
         await interaction.response.defer()
         err = self.check_bot_invite_permissions(interaction)
         if err:
-            card = CynexCloudErrorContainer("Missing Bot Permissions", err)
+            card = BreezeErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build())
             return
 
@@ -308,7 +308,7 @@ class InviteTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = CynexCloudInfoContainer(f"Invited Members List", f"No members have joined using invites from {member.name}.")
+            card = BreezeInfoContainer(f"Invited Members List", f"No members have joined using invites from {member.name}.")
             await interaction.followup.send(view=card.build())
             return
 
@@ -327,7 +327,7 @@ class InviteTracker(commands.Cog):
         if lines:
             pages.append("\n".join(lines))
 
-        paginator = CynexCloudPaginationContainer(f"Members Invited by {member.name}", pages, interaction.user.id)
+        paginator = BreezePaginationContainer(f"Members Invited by {member.name}", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)
 
     @invites.command(name="leaderboard", description="Display the server's top inviters leaderboard")
@@ -335,7 +335,7 @@ class InviteTracker(commands.Cog):
         await interaction.response.defer()
         err = self.check_bot_invite_permissions(interaction)
         if err:
-            card = CynexCloudErrorContainer("Missing Bot Permissions", err)
+            card = BreezeErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build())
             return
 
@@ -352,7 +352,7 @@ class InviteTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = CynexCloudInfoContainer("Top Inviters Leaderboard", "*No invite statistics found on this server.*")
+            card = BreezeInfoContainer("Top Inviters Leaderboard", "*No invite statistics found on this server.*")
             await interaction.followup.send(view=card.build())
             return
 
@@ -370,7 +370,7 @@ class InviteTracker(commands.Cog):
         if lines:
             pages.append("\n".join(lines))
 
-        paginator = CynexCloudPaginationContainer("Top Inviters Leaderboard", pages, interaction.user.id)
+        paginator = BreezePaginationContainer("Top Inviters Leaderboard", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)
 
     @invites.command(name="reset", description="Clear all invite stats for the server")
@@ -384,7 +384,7 @@ class InviteTracker(commands.Cog):
             await db.execute("DELETE FROM invited_by WHERE guild_id = ?", (guild_id,))
             await db.commit()
 
-        card = CynexCloudSuccessContainer("Statistics Reset", "🗑️ All server invite tracking logs and statistics have been successfully cleared.")
+        card = BreezeSuccessContainer("Statistics Reset", "🗑️ All server invite tracking logs and statistics have been successfully cleared.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @invites.command(name="bonus", description="Grant bonus invites to a specific member")
@@ -403,7 +403,7 @@ class InviteTracker(commands.Cog):
             """, (guild_id, user_id, amount, amount))
             await db.commit()
 
-        card = CynexCloudSuccessContainer("Bonus Invites Updated", f"Granted **{amount}** bonus invites to {member.mention}.")
+        card = BreezeSuccessContainer("Bonus Invites Updated", f"Granted **{amount}** bonus invites to {member.mention}.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
 async def setup(bot: commands.Bot):
