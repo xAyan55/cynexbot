@@ -1,7 +1,6 @@
 import discord
 from discord.ui import LayoutView, Container, TextDisplay, Separator, Section, ActionRow, Button
 from typing import Optional, List
-from tickets import validate_v2_layout
 
 class BreezeContainerBuilder:
     """Universal Breeze UI Builder using Components V2 Layouts with auto-splitting."""
@@ -72,6 +71,7 @@ class BreezeContainerBuilder:
                     self.current_container.add_item(TextDisplay("🍃 *Breeze Bot — Premium Utilities & Security*"))
         
         # Validate using core discord components v2 validation rules
+        from tickets import validate_v2_layout
         validate_v2_layout(self.layout)
         return self.layout
 
@@ -155,4 +155,5 @@ class BreezePaginationContainer(LayoutView):
         container.add_item(Separator())
         container.add_item(TextDisplay("🍃 *Breeze Bot — Premium Utilities & Security*"))
         
+        from tickets import validate_v2_layout
         validate_v2_layout(self)
