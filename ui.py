@@ -109,11 +109,10 @@ class BreezePaginationContainer(LayoutView):
         
         container.add_item(TextDisplay(
             f"🍃 **Breeze** | **{self.title}**\n"
-            f"*Page {self.current_page + 1} of {len(self.pages)}*"
+            f"*Page {self.current_page + 1} of {len(self.pages)}*\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{self.pages[self.current_page]}"
         ))
-        container.add_item(Separator())
-        container.add_item(TextDisplay(self.pages[self.current_page]))
-        container.add_item(Separator())
         
         prev_btn = Button(
             label="◀ Previous",
@@ -152,8 +151,10 @@ class BreezePaginationContainer(LayoutView):
         container.add_item(ActionRow(prev_btn, next_btn))
         
         # Add footer to pagination container
-        container.add_item(Separator())
-        container.add_item(TextDisplay("🍃 *Breeze Bot — Premium Utilities & Security*"))
+        container.add_item(TextDisplay(
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🍃 *Breeze Bot — Premium Utilities & Security*"
+        ))
         
         from tickets import validate_v2_layout
         validate_v2_layout(self)
