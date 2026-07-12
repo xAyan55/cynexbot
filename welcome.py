@@ -351,12 +351,12 @@ class Welcome(commands.Cog):
         container1 = Container(accent_color=3447003)
         container1.add_item(TextDisplay(f"👋 **Welcome to {member.guild.name}!**"))
         container1.add_item(Separator())
-        container1.add_item(Section(title="🌿 Greeting Section", text=translated_msg))
+        container1.add_item(TextDisplay(f"🌿 **Greeting Section**\n{translated_msg}"))
         container1.add_item(Separator())
-        container1.add_item(Section(title="👤 Member Information", text=f"You are member number **{member.guild.member_count}**."))
+        container1.add_item(TextDisplay(f"👤 **Member Information**\nYou are member number **{member.guild.member_count}**."))
         
         container2 = Container(accent_color=3447003)
-        container2.add_item(Section(title="🏠 Server Information", text="Please click the **Rules** button below or check the server rules channels to ensure guidelines are followed."))
+        container2.add_item(TextDisplay(f"🏠 **Server Information**\nPlease click the **Rules** button below or check the server rules channels to ensure guidelines are followed."))
         container2.add_item(Separator())
         
         btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{member.id}")
@@ -525,12 +525,12 @@ class Welcome(commands.Cog):
         container1 = Container(accent_color=3447003)
         container1.add_item(TextDisplay(f"👋 **Welcome to {interaction.guild.name}!**"))
         container1.add_item(Separator())
-        container1.add_item(Section(title="🌿 Greeting Section", text=translated_msg))
+        container1.add_item(TextDisplay(f"🌿 **Greeting Section**\n{translated_msg}"))
         container1.add_item(Separator())
-        container1.add_item(Section(title="👤 Member Information", text=f"You are member number **{interaction.guild.member_count}**."))
+        container1.add_item(TextDisplay(f"👤 **Member Information**\nYou are member number **{interaction.guild.member_count}**."))
         
         container2 = Container(accent_color=3447003)
-        container2.add_item(Section(title="🏠 Server Information", text="Please click the **Rules** button below or check the server rules channels to ensure guidelines are followed."))
+        container2.add_item(TextDisplay(f"🏠 **Server Information**\nPlease click the **Rules** button below or check the server rules channels to ensure guidelines are followed."))
         container2.add_item(Separator())
         
         btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{interaction.user.id}")

@@ -670,22 +670,20 @@ class OpenTicketModal(discord.ui.Modal):
             container1 = Container(accent_color=accent_color_int)
             container1.add_item(TextDisplay(f"🎫 **Ticket {ticket_num}**\nHello {user.mention}, thank you for opening a support ticket!"))
             container1.add_item(Separator())
-            container1.add_item(Section(
-                title="📝 Subject & Description",
-                text=f"**Subject:** {self.subject.value}\n**Description:** {self.description.value or 'No description provided.'}"
-            ))
+            container1.add_item(TextDisplay(f"📝 **Subject & Description**\n**Subject:** {self.subject.value}\n**Description:** {self.description.value or 'No description provided.'}"))
+            container1.add_item(Separator())
 
             # Container 2: Ticket Status
             container2 = Container(accent_color=accent_color_int)
-            container2.add_item(Section(title="👤 Created By", text=f"{user.mention} (`{user.id}`)"))
+            container2.add_item(TextDisplay(f"👤 **Created By**\n{user.mention} (`{user.id}`)"))
             container2.add_item(Separator())
-            container2.add_item(Section(title="📂 Category", text=f"{self.category}"))
+            container2.add_item(TextDisplay(f"📂 **Category**\n{self.category}"))
             container2.add_item(Separator())
-            container2.add_item(Section(title="👥 Assigned Staff", text="`Unassigned`"))
+            container2.add_item(TextDisplay(f"👥 **Assigned Staff**\n`Unassigned`"))
 
             # Container 3: Status & Controls
             container3 = Container(accent_color=accent_color_int)
-            container3.add_item(Section(title="ℹ️ Current Status", text="`Open`"))
+            container3.add_item(TextDisplay(f"ℹ️ **Current Status**\n`Open`"))
             container3.add_item(Separator())
             
             # Action Row containing Close, Claim, Transcript, Delete buttons
@@ -764,7 +762,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
                 accessory=reopen_accessory
             ))
             root_container.add_item(Separator())
-            root_container.add_item(Section(title="Closed By", text=f"{user.mention}"))
+            root_container.add_item(TextDisplay(f"**Closed By**\n{user.mention}"))
             
             layout_view = LayoutView()
             layout_view.add_item(root_container)
@@ -810,12 +808,12 @@ class GlobalTicketWelcomeView(discord.ui.View):
             
             unclaim_btn = Button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="breeze:unclaim_ticket")
             root_container.add_item(Section(
-                title="Claim Actions",
-                text="Staff can release this ticket if needed.",
+                "Claim Actions",
+                "Staff can release this ticket if needed.",
                 accessory=unclaim_btn
             ))
             root_container.add_item(Separator())
-            root_container.add_item(Section(title="Staff Member", text=f"{user.mention}"))
+            root_container.add_item(TextDisplay(f"**Staff Member**\n{user.mention}"))
             
             layout_view = LayoutView()
             layout_view.add_item(root_container)
@@ -987,7 +985,7 @@ class GlobalTicketControlView(discord.ui.View):
             root = Container(accent_color=65280) # Green
             root.add_item(TextDisplay(f"🔓 **Ticket Reopened**\nMessaging has been restored."))
             root.add_item(Separator())
-            root.add_item(Section(title="Reopened By", text=f"{user.mention}"))
+            root.add_item(TextDisplay(f"**Reopened By**\n{user.mention}"))
             
             layout = LayoutView()
             layout.add_item(root)
@@ -1028,7 +1026,7 @@ class GlobalTicketControlView(discord.ui.View):
             root = Container(accent_color=15105570) # Orange
             root.add_item(TextDisplay(f"👤 **Ticket Unclaimed**\nIt is now open for support staff assistance."))
             root.add_item(Separator())
-            root.add_item(Section(title="Unclaimed By", text=f"{user.mention}"))
+            root.add_item(TextDisplay(f"**Unclaimed By**\n{user.mention}"))
             
             layout = LayoutView()
             layout.add_item(root)

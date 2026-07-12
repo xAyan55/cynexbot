@@ -108,13 +108,13 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
     count0 = tally[0]
     pct0 = (count0 / total_votes_cast * 100) if total_votes_cast > 0 else 0
     bar0 = "🟩" * int(round(pct0 / 10)) + "⬛" * (10 - int(round(pct0 / 10)))
-    container1.add_item(discord.ui.Section(title=f"Option 1: {options[0]}", text=f"{bar0} `{count0} votes` ({pct0:.1f}%)"))
+    container1.add_item(discord.ui.TextDisplay(f"**Option 1: {options[0]}**\n{bar0} `{count0} votes` ({pct0:.1f}%)"))
     container1.add_item(discord.ui.Separator())
     
     count1 = tally[1]
     pct1 = (count1 / total_votes_cast * 100) if total_votes_cast > 0 else 0
     bar1 = "🟩" * int(round(pct1 / 10)) + "⬛" * (10 - int(round(pct1 / 10)))
-    container1.add_item(discord.ui.Section(title=f"Option 2: {options[1]}", text=f"{bar1} `{count1} votes` ({pct1:.1f}%)"))
+    container1.add_item(discord.ui.TextDisplay(f"**Option 2: {options[1]}**\n{bar1} `{count1} votes` ({pct1:.1f}%)"))
     
     layout.add_item(container1)
     
@@ -124,14 +124,14 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
         count2 = tally[2]
         pct2 = (count2 / total_votes_cast * 100) if total_votes_cast > 0 else 0
         bar2 = "🟩" * int(round(pct2 / 10)) + "⬛" * (10 - int(round(pct2 / 10)))
-        container2.add_item(discord.ui.Section(title=f"Option 3: {options[2]}", text=f"{bar2} `{count2} votes` ({pct2:.1f}%)"))
+        container2.add_item(discord.ui.TextDisplay(f"**Option 3: {options[2]}**\n{bar2} `{count2} votes` ({pct2:.1f}%)"))
         
         if len(options) > 3:
             container2.add_item(discord.ui.Separator())
             count3 = tally[3]
             pct3 = (count3 / total_votes_cast * 100) if total_votes_cast > 0 else 0
             bar3 = "🟩" * int(round(pct3 / 10)) + "⬛" * (10 - int(round(pct3 / 10)))
-            container2.add_item(discord.ui.Section(title=f"Option 4: {options[3]}", text=f"{bar3} `{count3} votes` ({pct3:.1f}%)"))
+            container2.add_item(discord.ui.TextDisplay(f"**Option 4: {options[3]}**\n{bar3} `{count3} votes` ({pct3:.1f}%)"))
             
         layout.add_item(container2)
         
@@ -142,15 +142,15 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
         if max_votes > 0:
             winners = [options[i] for i, v in enumerate(tally) if v == max_votes]
             w_str = f"`{winners[0]}`" if len(winners) == 1 else ", ".join([f"`{w}`" for w in winners])
-            container_stats.add_item(discord.ui.Section(title="🏆 Results Winner", text=w_str))
+            container_stats.add_item(discord.ui.TextDisplay(f"**🏆 Results Winner**\n{w_str}"))
         else:
-            container_stats.add_item(discord.ui.Section(title="🏆 Results Winner", text="No votes were cast."))
+            container_stats.add_item(discord.ui.TextDisplay("**🏆 Results Winner**\nNo votes were cast."))
             
         container_stats.add_item(discord.ui.Separator())
-        container_stats.add_item(discord.ui.Section(title="Status", text="🔒 *This poll is closed.*"))
+        container_stats.add_item(discord.ui.TextDisplay("**Status**\n🔒 *This poll is closed.*"))
         layout.add_item(container_stats)
     elif status == "cancelled":
-        container_stats.add_item(discord.ui.Section(title="Status", text="❌ *This poll was cancelled.*"))
+        container_stats.add_item(discord.ui.TextDisplay("**Status**\n❌ *This poll was cancelled.*"))
         layout.add_item(container_stats)
     else:
         # Active metadata
@@ -163,7 +163,7 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
             settings_flags.append("Single Choice")
             
         metadata_text = f"⏳ <t:{end_time_epoch}:F> (<t:{end_time_epoch}:R>)\n⚙️ **Settings:** {', '.join(settings_flags)}"
-        container_stats.add_item(discord.ui.Section(title="ℹ️ Poll Metadata", text=metadata_text))
+        container_stats.add_item(discord.ui.TextDisplay(f"**ℹ️ Poll Metadata**\n{metadata_text}"))
         container_stats.add_item(discord.ui.Separator())
         
         voter_text = f"👤 **Total Voters:** `{total_voters}`"
@@ -174,7 +174,7 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
                 voter_lines.append(f"<@{voter_id}> voted for {choices_str}")
             voter_text += "\n" + "\n".join(voter_lines)
             
-        container_stats.add_item(discord.ui.Section(title="👥 Voter Activity", text=voter_text))
+        container_stats.add_item(discord.ui.TextDisplay(f"**👥 Voter Activity**\n{voter_text}"))
         layout.add_item(container_stats)
         
     # Container 4: Action Row for buttons
@@ -190,6 +190,7 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
     # Validate layout constraints
     from tickets import validate_v2_layout
     validate_v2_layout(layout)
+    return layout
 
 
 async def handle_poll_vote_interaction(interaction: discord.Interaction, option_idx: int):

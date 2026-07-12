@@ -9,9 +9,6 @@ WorkingDirectory=/root/cynexbot
 ExecStart=/root/cynexbot/venv/bin/python bot.py
 Restart=always
 RestartSec=5
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=breeze-bot
 
 # Ensure the process restarts if it exits unexpectedly
 Environment=PYTHONUNBUFFERED=1

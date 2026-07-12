@@ -39,9 +39,9 @@ class BreezeContainerBuilder:
         """Adds a labeled native Section to the container."""
         self._ensure_space()
         if accessory is not None:
-            self.current_container.add_item(Section(title=title, text=content, accessory=accessory))
+            self.current_container.add_item(Section(title, content, accessory=accessory))
         else:
-            self.current_container.add_item(Section(title=title, text=content))
+            self.current_container.add_item(TextDisplay(f"**{title}**\n{content}"))
         return self
 
     def add_text(self, text: str):
