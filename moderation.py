@@ -122,17 +122,12 @@ class Moderation(commands.Cog):
     async def log_moderation(self, guild: discord.Guild, user: discord.Member, action: str, details: str):
         log_ch = await get_log_channel(guild)
         if log_ch:
-            embed = discord.Embed(
-                title="🛡️ Breeze Moderation Alert",
-                color=discord.Color.red(),
-                timestamp=datetime.utcnow()
-            )
-            embed.add_field(name="User", value=f"{user.mention} (`{user.id}`)", inline=True)
-            embed.add_field(name="Action", value=action, inline=True)
-            embed.add_field(name="Details", value=details, inline=False)
-            embed.set_footer(text="[AntiSwear] Log System")
+            card = BreezeWarningContainer("🛡️ Breeze Moderation Alert", f"Action taken by system against target user.")
+            card.add_section("User Affected", f"{user.mention} (`{user.id}`)")
+            card.add_section("Action Executed", action)
+            card.add_section("Reason / Details", details)
             try:
-                await log_ch.send(embed=embed)
+                await log_ch.send(view=card.build())
             except discord.Forbidden:
                 logger.warning(f"[AntiSwear] Missing permissions to write in log channel {log_ch.id} (Guild: {guild.id})")
         logger.info(f"[AntiSwear] Action={action} | Guild={guild.id} | User={user.id} | Details={details}")

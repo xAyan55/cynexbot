@@ -612,16 +612,17 @@ class Reviews(commands.Cog):
         page_size = 3
         for i in range(0, len(rows), page_size):
             chunk = rows[i:i + page_size]
-            page_text = ""
+            page_sections = []
             for r in chunk:
                 r_id, u_id, rating, svc, msg = r
-                page_text += (
-                    f"**ID:** `{r_id}` | **Author:** <@{u_id}>\n"
-                    f"**Rating:** {'⭐' * rating} | **Service:** `{svc}`\n"
-                    f"**Message:** {msg}\n"
-                    f"─────────────────────\n"
-                )
-            pages.append(page_text)
+                sec_title = f"⭐ Review #{r_id}"
+                sec_desc = f"• **Author:** <@{u_id}>\n• **Rating:** {'⭐' * rating}\n• **Service:** `{svc}`\n• **Review:** {msg}"
+                page_sections.append((sec_title, sec_desc))
+            pages.append({
+                "title": "Server Reviews List",
+                "description": f"Page {i//page_size + 1} of {(len(rows) - 1)//page_size + 1}",
+                "sections": page_sections
+            })
 
         paginator = BreezePaginationContainer("Server Reviews List", pages, interaction.user.id, accent_color=13937975)
         await interaction.followup.send(view=paginator, ephemeral=True)

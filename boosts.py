@@ -289,31 +289,33 @@ class BoostTracker(commands.Cog):
             return
 
         pages = []
-        lines = []
-        for idx, row in enumerate(rows, 1):
-            user_id, date_str, total = row
-            member_obj = interaction.guild.get_member(int(user_id))
-            user_str = member_obj.mention if member_obj else f"`ID: {user_id}`"
-            
-            # Duration calculation
-            try:
-                # SQL dates are usually YYYY-MM-DD HH:MM:SS or ISO format
-                # datetime.fromisoformat doesn't always support trailing space and timezone without tzinfo
-                clean_date = date_str.split(".")[0]  # strip sub-seconds
-                dt = datetime.strptime(clean_date, "%Y-%m-%d %H:%M:%S")
-                diff = datetime.now() - dt
-                days = diff.days
-                duration_str = f"**{days} days**"
-            except Exception:
-                duration_str = "Unknown duration"
-
-            lines.append(f"**#{idx}** {user_str} — Boosting for {duration_str} (`{total}` times boosted)")
-            
-            if len(lines) == 10:
-                pages.append("\n".join(lines))
-                lines = []
-        if lines:
-            pages.append("\n".join(lines))
+        page_size = 4
+        for i in range(0, len(rows), page_size):
+            chunk = rows[i:i + page_size]
+            page_sections = []
+            for offset, row in enumerate(chunk):
+                idx = i + offset + 1
+                user_id, date_str, total = row
+                member_obj = interaction.guild.get_member(int(user_id))
+                user_str = member_obj.mention if member_obj else f"User ID: {user_id}"
+                
+                try:
+                    clean_date = date_str.split(".")[0]
+                    dt = datetime.strptime(clean_date, "%Y-%m-%d %H:%M:%S")
+                    diff = datetime.now() - dt
+                    days = diff.days
+                    duration_str = f"{days} days"
+                except Exception:
+                    duration_str = "Unknown duration"
+                    
+                sec_title = f"🚀 Booster Rank #{idx}: {member_obj.display_name if member_obj else user_id}"
+                sec_desc = f"• **Member:** {user_str}\n• **Duration:** Boosting for {duration_str}\n• **Total Boosts:** `{total}` times boosted"
+                page_sections.append((sec_title, sec_desc))
+            pages.append({
+                "title": "Server Booster Leaderboard",
+                "description": f"Page {i//page_size + 1} of {(len(rows) - 1)//page_size + 1}",
+                "sections": page_sections
+            })
 
         paginator = BreezePaginationContainer("Server Booster Leaderboard", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)

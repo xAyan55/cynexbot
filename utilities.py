@@ -31,7 +31,14 @@ from ui import (
     BreezeWarningContainer,
     BreezeInfoContainer,
     BreezePaginationContainer,
-    BreezeContainerBuilder
+    BreezeContainerBuilder,
+    create_info_card,
+    create_success_section,
+    create_warning_section,
+    create_error_section,
+    create_user_card,
+    create_server_card,
+    create_pagination_menu
 )
 
 logger = logging.getLogger("Breeze.Utilities")
@@ -81,8 +88,7 @@ def parse_duration(duration_str: str) -> Optional[int]:
 # POLL HELPERS
 # ══════════════════════════════════════════════════════════════════════
 
-def generate_poll_description(question: str, options: list, votes: dict, anonymous: bool, allow_multiple: bool, end_time_epoch: int, status: str) -> str:
-    """Generates a premium-branded markdown layout tree representing poll percentages."""
+def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool, allow_multiple: bool, end_time_epoch: int, status: str) -> discord.ui.LayoutView:
     total_voters = len(votes)
     tally = [0] * len(options)
     for voter_id, choice_indices in votes.items():
@@ -92,32 +98,62 @@ def generate_poll_description(question: str, options: list, votes: dict, anonymo
                 
     total_votes_cast = sum(tally)
     
-    desc = f"# 📊 Poll: {question}\n\n"
-    for idx, opt in enumerate(options):
-        count = tally[idx]
-        pct = (count / total_votes_cast * 100) if total_votes_cast > 0 else 0
+    layout = discord.ui.LayoutView()
+    
+    # Container 1: Question and Options 1 & 2
+    container1 = discord.ui.Container(accent_color=3447003)
+    container1.add_item(discord.ui.TextDisplay(f"📊 **{question}**"))
+    container1.add_item(discord.ui.Separator())
+    
+    count0 = tally[0]
+    pct0 = (count0 / total_votes_cast * 100) if total_votes_cast > 0 else 0
+    bar0 = "🟩" * int(round(pct0 / 10)) + "⬛" * (10 - int(round(pct0 / 10)))
+    container1.add_item(discord.ui.Section(title=f"Option 1: {options[0]}", text=f"{bar0} `{count0} votes` ({pct0:.1f}%)"))
+    container1.add_item(discord.ui.Separator())
+    
+    count1 = tally[1]
+    pct1 = (count1 / total_votes_cast * 100) if total_votes_cast > 0 else 0
+    bar1 = "🟩" * int(round(pct1 / 10)) + "⬛" * (10 - int(round(pct1 / 10)))
+    container1.add_item(discord.ui.Section(title=f"Option 2: {options[1]}", text=f"{bar1} `{count1} votes` ({pct1:.1f}%)"))
+    
+    layout.add_item(container1)
+    
+    # Container 2: Options 3 & 4 (if any)
+    if len(options) > 2:
+        container2 = discord.ui.Container(accent_color=3447003)
+        count2 = tally[2]
+        pct2 = (count2 / total_votes_cast * 100) if total_votes_cast > 0 else 0
+        bar2 = "🟩" * int(round(pct2 / 10)) + "⬛" * (10 - int(round(pct2 / 10)))
+        container2.add_item(discord.ui.Section(title=f"Option 3: {options[2]}", text=f"{bar2} `{count2} votes` ({pct2:.1f}%)"))
         
-        bar_length = 10
-        filled = int(round(pct / (100 / bar_length)))
-        bar = "🟩" * filled + "⬛" * (bar_length - filled)
-        desc += f"**{idx+1}. {opt}**\n{bar} `{count} votes` ({pct:.1f}%)\n\n"
+        if len(options) > 3:
+            container2.add_item(discord.ui.Separator())
+            count3 = tally[3]
+            pct3 = (count3 / total_votes_cast * 100) if total_votes_cast > 0 else 0
+            bar3 = "🟩" * int(round(pct3 / 10)) + "⬛" * (10 - int(round(pct3 / 10)))
+            container2.add_item(discord.ui.Section(title=f"Option 4: {options[3]}", text=f"{bar3} `{count3} votes` ({pct3:.1f}%)"))
+            
+        layout.add_item(container2)
         
+    # Container 3: Stats / Status / Results
+    container_stats = discord.ui.Container(accent_color=3447003)
     if status == "closed":
         max_votes = max(tally) if tally else 0
         if max_votes > 0:
             winners = [options[i] for i, v in enumerate(tally) if v == max_votes]
-            if len(winners) == 1:
-                desc += f"🏆 **Winner:** `{winners[0]}`\n\n"
-            else:
-                desc += f"🏆 **Tie between:** " + ", ".join([f"`{w}`" for w in winners]) + "\n\n"
+            w_str = f"`{winners[0]}`" if len(winners) == 1 else ", ".join([f"`{w}`" for w in winners])
+            container_stats.add_item(discord.ui.Section(title="🏆 Results Winner", text=w_str))
         else:
-            desc += "🏆 **No votes were cast.**\n\n"
-        desc += "🔒 *This poll is closed. Final results tabulated.*"
+            container_stats.add_item(discord.ui.Section(title="🏆 Results Winner", text="No votes were cast."))
+            
+        container_stats.add_item(discord.ui.Separator())
+        container_stats.add_item(discord.ui.Section(title="Status", text="🔒 *This poll is closed.*"))
+        layout.add_item(container_stats)
     elif status == "cancelled":
-        desc += "❌ *This poll was cancelled.*"
+        container_stats.add_item(discord.ui.Section(title="Status", text="❌ *This poll was cancelled.*"))
+        layout.add_item(container_stats)
     else:
-        desc += f"⏳ **Ends:** <t:{end_time_epoch}:F> (<t:{end_time_epoch}:R>)\n"
-        desc += f"👤 **Voters:** `{total_voters}` | **Settings:** "
+        # Active metadata
         settings_flags = []
         if anonymous:
             settings_flags.append("Anonymous")
@@ -125,17 +161,36 @@ def generate_poll_description(question: str, options: list, votes: dict, anonymo
             settings_flags.append("Multiple Choice")
         if not settings_flags:
             settings_flags.append("Single Choice")
-        desc += ", ".join(settings_flags) + "\n"
+            
+        metadata_text = f"⏳ <t:{end_time_epoch}:F> (<t:{end_time_epoch}:R>)\n⚙️ **Settings:** {', '.join(settings_flags)}"
+        container_stats.add_item(discord.ui.Section(title="ℹ️ Poll Metadata", text=metadata_text))
+        container_stats.add_item(discord.ui.Separator())
         
+        voter_text = f"👤 **Total Voters:** `{total_voters}`"
         if not anonymous and total_voters > 0:
-            desc += "\n**Recent Activity:**\n"
             voter_lines = []
             for voter_id, choices in list(votes.items())[-5:]:
                 choices_str = ", ".join([f"`{options[c]}`" for c in choices if 0 <= c < len(options)])
                 voter_lines.append(f"<@{voter_id}> voted for {choices_str}")
-            desc += "\n".join(voter_lines)
+            voter_text += "\n" + "\n".join(voter_lines)
             
-    return desc
+        container_stats.add_item(discord.ui.Section(title="👥 Voter Activity", text=voter_text))
+        layout.add_item(container_stats)
+        
+    # Container 4: Action Row for buttons
+    if status == "active":
+        container_btn = discord.ui.Container(accent_color=3447003)
+        row_items = []
+        for idx, opt in enumerate(options):
+            row_items.append(discord.ui.Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"breeze:poll:vote:{idx}"))
+        row_items.append(discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel"))
+        container_btn.add_item(discord.ui.ActionRow(*row_items))
+        layout.add_item(container_btn)
+        
+    # Validate layout constraints
+    from tickets import validate_v2_layout
+    validate_v2_layout(layout)
+
 
 async def handle_poll_vote_interaction(interaction: discord.Interaction, option_idx: int):
     """Callback triggered globally when a member votes on a poll."""
@@ -195,20 +250,7 @@ async def handle_poll_vote_interaction(interaction: discord.Interaction, option_
     except Exception:
         end_time_epoch = int(datetime.now().timestamp())
         
-    desc = generate_poll_description(question, options, votes, anonymous, allow_multiple, end_time_epoch, status)
-    
-    layout = LayoutView()
-    container = Container(accent_color=3447003)
-    container.add_item(TextDisplay(desc))
-    
-    row_items = []
-    for idx, opt in enumerate(options):
-        row_items.append(Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"breeze:poll:vote:{idx}"))
-    row_items.append(Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel"))
-    
-    container.add_item(ActionRow(*row_items))
-    layout.add_item(container)
-    
+    layout = build_poll_layout(question, options, votes, anonymous, allow_multiple, end_time_epoch, status)
     await interaction.message.edit(view=layout)
     success = BreezeSuccessContainer("Vote Saved", f"Your vote has been successfully {msg_action}!")
     await interaction.followup.send(view=success.build(), ephemeral=True)
@@ -253,13 +295,7 @@ async def handle_poll_cancel_interaction(interaction: discord.Interaction):
     anonymous = bool(anonymous_int)
     allow_multiple = bool(allow_multiple_int)
     
-    desc = generate_poll_description(question, options, votes, anonymous, allow_multiple, int(datetime.now().timestamp()), "cancelled")
-    
-    layout = LayoutView()
-    container = Container(accent_color=16711680)
-    container.add_item(TextDisplay(desc))
-    layout.add_item(container)
-    
+    layout = build_poll_layout(question, options, votes, anonymous, allow_multiple, int(datetime.now().timestamp()), "cancelled")
     await interaction.message.edit(view=layout)
     success = BreezeSuccessContainer("Poll Cancelled", "This poll status has been marked as cancelled.")
     await interaction.followup.send(view=success.build(), ephemeral=True)
@@ -639,7 +675,7 @@ class Utilities(commands.Cog):
         
         user = await self.bot.fetch_user(target.id)
         roles = [role.mention for role in target.roles if role != interaction.guild.default_role]
-        roles_str = ", ".join(roles) if roles else "None"
+        roles_str = ", ".join(roles[:20]) + (f" and {len(roles)-20} more..." if len(roles) > 20 else "") if roles else "None"
         
         flags = []
         if user.public_flags.staff:
@@ -667,17 +703,43 @@ class Utilities(commands.Cog):
             
         flags_str = ", ".join(flags) if flags else "None"
         
-        card = BreezeInfoContainer(f"User Profile: {target}", f"Metadata cards generated for {target.mention}.")
-        card.add_section("Username", f"`{target.name}`")
-        card.add_section("Display Name", f"`{target.display_name}`")
-        card.add_section("User ID", f"`{target.id}`")
-        card.add_section("Bot Status", "🤖 Bot Account" if target.bot else "👤 Human Account")
-        card.add_section("Account Age", f"Created: <t:{int(target.created_at.timestamp())}:F> (<t:{int(target.created_at.timestamp())}:R>)")
-        card.add_section("Server Join Age", f"Joined: <t:{int(target.joined_at.timestamp())}:F> (<t:{int(target.joined_at.timestamp())}:R>)")
-        card.add_section("Public Flags / Badges", flags_str)
-        card.add_section(f"Roles List ({len(roles)})", roles_str)
+        # Collect key permissions
+        perms = target.guild_permissions
+        key_perms = []
+        if perms.administrator:
+            key_perms.append("Administrator")
+        if perms.manage_guild:
+            key_perms.append("Manage Server")
+        if perms.manage_roles:
+            key_perms.append("Manage Roles")
+        if perms.manage_channels:
+            key_perms.append("Manage Channels")
+        if perms.kick_members:
+            key_perms.append("Kick Members")
+        if perms.ban_members:
+            key_perms.append("Ban Members")
+        if perms.manage_messages:
+            key_perms.append("Manage Messages")
+        if perms.mention_everyone:
+            key_perms.append("Mention Everyone")
+        if perms.mute_members:
+            key_perms.append("Mute Members")
+        if perms.deafen_members:
+            key_perms.append("Deafen Members")
+        if perms.move_members:
+            key_perms.append("Move Members")
+            
+        perms_str = ", ".join(key_perms) if key_perms else "None"
         
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "👤 User Profile": f"• **Username:** `{target.name}`\n• **Display Name:** `{target.display_name}`\n• **ID:** `{target.id}`\n• **Bot Status:** `{'Yes 🤖' if target.bot else 'No 👤'}`",
+            "📅 Account": f"• **Registered:** <t:{int(target.created_at.timestamp())}:F> (<t:{int(target.created_at.timestamp())}:R>)\n• **Joined:** <t:{int(target.joined_at.timestamp())}:F> (<t:{int(target.joined_at.timestamp())}:R>)",
+            "🎭 Roles": f"• **Total Roles:** `{len(roles)}`\n• **List:** {roles_str}",
+            "📊 Statistics": f"• **Badges:** {flags_str}\n• **Administrator:** `{'Yes 🛡️' if target.guild_permissions.administrator else 'No'}`",
+            "📝 Permissions": f"• **Key Permissions:** {perms_str}"
+        }
+        card = create_user_card(target, sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="serverinfo", description="Show detailed information about this server")
     async def serverinfo(self, interaction: discord.Interaction):
@@ -692,14 +754,15 @@ class Utilities(commands.Cog):
         bots = sum(1 for m in guild.members if m.bot)
         humans = guild.member_count - bots
         
-        card = BreezeInfoContainer(f"Server Metrics: {guild.name}", f"ID: `{guild.id}`")
-        card.add_section("Server Owner", f"{guild.owner.mention} (`{guild.owner_id}`)")
-        card.add_section("Created On", f"<t:{int(guild.created_at.timestamp())}:F> (<t:{int(guild.created_at.timestamp())}:R>)")
-        card.add_section("Members Metrics", f"👥 Total: `{guild.member_count}` | 👤 Humans: `{humans}` | 🤖 Bots: `{bots}`")
-        card.add_section("Channels Tally", f"📁 Categories: `{categories}` | 💬 Text: `{text_channels}` | 🔊 Voice: `{voice_channels}`")
-        card.add_section("Extra Flags", f"🎭 Roles count: `{len(guild.roles)}` | 🚀 Boosts: `{guild.premium_subscription_count}` (Level {guild.premium_tier})")
-        
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "General Information": f"• **Owner:** {guild.owner.mention if guild.owner else 'Unknown'} (`{guild.owner_id}`)\n• **Created On:** <t:{int(guild.created_at.timestamp())}:F> (<t:{int(guild.created_at.timestamp())}:R>)\n• **Server ID:** `{guild.id}`",
+            "Members": f"• **Total Members:** `{guild.member_count}`\n• **Humans:** `{humans}`\n• **Bots:** `{bots}`",
+            "Channels": f"• **Categories:** `{categories}`\n• **Text Channels:** `{text_channels}`\n• **Voice Channels:** `{voice_channels}`",
+            "Boosts": f"• **Total Boosts:** `{guild.premium_subscription_count}`\n• **Level Tier:** `{guild.premium_tier}`",
+            "Roles": f"• **Total Roles:** `{len(guild.roles)}`"
+        }
+        card = create_server_card(guild, sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="avatar", description="Show a member's avatar")
     @app_commands.describe(member="The member to view")
@@ -708,9 +771,10 @@ class Utilities(commands.Cog):
         await log_command_usage("avatar", interaction)
         target = member or interaction.user
         
-        card = BreezeInfoContainer(f"Avatar of {target.display_name}")
-        card.layout.add_item(MediaGallery(MediaGalleryItem(target.display_avatar.url)))
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        builder = BreezeContainerBuilder(f"Avatar of {target.name}", f"Avatar profile asset for {target.mention}")
+        builder.add_section("Metadata Details", f"• **Avatar URL:** [Download Link]({target.display_avatar.url})")
+        builder.layout.add_item(MediaGallery(MediaGalleryItem(target.display_avatar.url)))
+        await interaction.followup.send(view=builder.build(), ephemeral=True)
 
     @app_commands.command(name="banner", description="Show a member's banner profile image")
     @app_commands.describe(member="The member to view")
@@ -721,13 +785,14 @@ class Utilities(commands.Cog):
         
         user = await self.bot.fetch_user(target.id)
         if not user.banner:
-            err = BreezeErrorContainer("No Banner Detected", f"User {target.mention} does not have a profile banner configuration.")
-            await interaction.followup.send(view=err.build(), ephemeral=True)
+            err = create_error_section("No Banner Detected", f"User {target.mention} does not have a profile banner configuration.")
+            await interaction.followup.send(view=err, ephemeral=True)
             return
             
-        card = BreezeInfoContainer(f"Profile Banner of {target.display_name}")
-        card.layout.add_item(MediaGallery(MediaGalleryItem(user.banner.url)))
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        builder = BreezeContainerBuilder(f"Profile Banner of {target.name}", f"Profile banner asset for {target.mention}")
+        builder.add_section("Metadata Details", f"• **Banner URL:** [Download Link]({user.banner.url})")
+        builder.layout.add_item(MediaGallery(MediaGalleryItem(user.banner.url)))
+        await interaction.followup.send(view=builder.build(), ephemeral=True)
 
     @app_commands.command(name="roleinfo", description="Show detailed information about a role")
     @app_commands.describe(role="The role to view")
@@ -739,14 +804,15 @@ class Utilities(commands.Cog):
         permissions = [p[0].replace('_', ' ').title() for p in role.permissions if p[1]]
         perms_str = ", ".join(permissions[:15]) + (f" and {len(permissions)-15} more..." if len(permissions) > 15 else "") if permissions else "None"
         
-        card = BreezeInfoContainer(f"Role Config: {role.name}", f"ID: `{role.id}`")
-        card.add_section("Color Code", f"`{role.color}`")
-        card.add_section("Position Rank", f"`{role.position}`")
-        card.add_section("Members Assigned", f"`{member_count}` users")
-        card.add_section("Settings Flags", f"Hoisted: `{'Yes' if role.hoist else 'No'}` | Mentionable: `{'Yes' if role.mentionable else 'No'}`")
-        card.add_section("Permissions List", perms_str)
-        
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "🎨 Color Code": f"`{role.color}`",
+            "📊 Position Rank": f"`{role.position}`",
+            "👥 Members Assigned": f"`{member_count}` users",
+            "⚙️ Settings Flags": f"• **Hoisted:** `{'Yes' if role.hoist else 'No'}`\n• **Mentionable:** `{'Yes' if role.mentionable else 'No'}`",
+            "🛡️ Permissions": perms_str
+        }
+        card = create_info_card(f"Role Config: {role.name}", f"ID: `{role.id}`", sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="channelinfo", description="Show detailed information about a channel")
     @app_commands.describe(channel="The channel to view")
@@ -755,19 +821,20 @@ class Utilities(commands.Cog):
         await log_command_usage("channelinfo", interaction)
         target = channel or interaction.channel
         
-        card = BreezeInfoContainer(f"Channel Config: #{target.name}", f"ID: `{target.id}`")
-        card.add_section("Type", f"`{target.type.name.title()}`")
-        card.add_section("Category Parent", f"{target.category.name if target.category else 'None'}")
-        card.add_section("Channel Position", f"`{target.position}`")
-        card.add_section("Created On", f"<t:{int(target.created_at.timestamp())}:F> (<t:{int(target.created_at.timestamp())}:R>)")
+        sections = {
+            "📝 Basic Details": f"• **Name:** `#{target.name}`\n• **ID:** `{target.id}`\n• **Type:** `{target.type.name.title()}`",
+            "📁 Category Parent": f"{target.category.name if target.category else 'None'}",
+            "📊 Channel Position": f"`{target.position}`",
+            "📅 Created On": f"<t:{int(target.created_at.timestamp())}:F> (<t:{int(target.created_at.timestamp())}:R>)"
+        }
         
         if isinstance(target, discord.TextChannel):
-            card.add_section("Topic", target.topic or "No topic set.")
-            card.add_section("Configuration", f"Slowmode: `{target.slowmode_delay}s` | NSFW: `{'Yes' if target.is_nsfw() else 'No'}`")
+            sections["💬 Text Configuration"] = f"• **Topic:** {target.topic or 'No topic set.'}\n• **Slowmode:** `{target.slowmode_delay}s`\n• **NSFW:** `{'Yes' if target.is_nsfw() else 'No'}`"
         elif isinstance(target, discord.VoiceChannel):
-            card.add_section("Voice Configuration", f"Bitrate: `{target.bitrate // 1000} kbps` | Limit: `{target.user_limit or 'Unlimited'}` users")
+            sections["🔊 Voice Configuration"] = f"• **Bitrate:** `{target.bitrate // 1000} kbps`\n• **User Limit:** `{target.user_limit or 'Unlimited'}` users"
             
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        card = create_info_card(f"Channel Config: #{target.name}", None, sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="membercount", description="Show server member metrics")
     async def membercount(self, interaction: discord.Interaction):
@@ -778,12 +845,13 @@ class Utilities(commands.Cog):
         bots = sum(1 for m in guild.members if m.bot)
         humans = total - bots
         
-        card = BreezeInfoContainer(f"Server Members: {guild.name}")
-        card.add_section("Total Members", f"`{total}`")
-        card.add_section("Humans", f"`{humans}`")
-        card.add_section("Bots", f"`{bots}`")
-        
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "👥 Total Members": f"`{total}`",
+            "👤 Humans": f"`{humans}`",
+            "🤖 Bot Accounts": f"`{bots}`"
+        }
+        card = create_info_card("Server Members Count", f"Total stats for **{guild.name}**", sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="ping", description="Show bot connection and database latency")
     async def ping(self, interaction: discord.Interaction):
@@ -799,16 +867,17 @@ class Utilities(commands.Cog):
         db_latency = (datetime.now() - t1).total_seconds() * 1000
         
         t2 = datetime.now()
-        card_loader = BreezeInfoContainer("Ping Latency Metric", "Measuring API latency round trip...")
-        followup_msg = await interaction.followup.send(view=card_loader.build(), ephemeral=True)
+        card_loader = create_info_card("Ping Latency Metric", "Measuring API latency round trip...", {})
+        followup_msg = await interaction.followup.send(view=card_loader, ephemeral=True)
         api_latency = (datetime.now() - t2).total_seconds() * 1000
         
-        card = BreezeInfoContainer("🏓 Pong Latencies", "System connection and storage latencies.")
-        card.add_section("Gateway Latency", f"`{gw_latency:.1f}ms`")
-        card.add_section("Discord API Latency", f"`{api_latency:.1f}ms`")
-        card.add_section("Database Latency", f"`{db_latency:.1f}ms`")
-        
-        await followup_msg.edit(view=card.build())
+        sections = {
+            "⚡ Gateway Latency": f"{gw_latency:.1f}ms",
+            "💾 Database": f"{db_latency:.1f}ms",
+            "🌐 API": "Healthy"
+        }
+        card = create_info_card("🏓 Pong Latencies", "System connection and database response times.", sections)
+        await followup_msg.edit(view=card)
 
     @app_commands.command(name="afk", description="Set your status to Away From Keyboard")
     @app_commands.describe(reason="Reason for going AFK")
@@ -902,20 +971,7 @@ class Utilities(commands.Cog):
         end_dt = datetime.now() + timedelta(seconds=seconds)
         end_str = end_dt.strftime('%Y-%m-%d %H:%M:%S')
         
-        desc = generate_poll_description(question, opt_list, {}, anonymous, allow_multiple, int(end_dt.timestamp()), "active")
-        
-        layout = LayoutView()
-        container = Container(accent_color=3447003)
-        container.add_item(TextDisplay(desc))
-        
-        row_items = []
-        for idx, opt in enumerate(opt_list):
-            row_items.append(Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"breeze:poll:vote:{idx}"))
-        row_items.append(Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel"))
-        
-        container.add_item(ActionRow(*row_items))
-        layout.add_item(container)
-        
+        layout = build_poll_layout(question, opt_list, {}, anonymous, allow_multiple, int(end_dt.timestamp()), "active")
         channel_msg = await interaction.channel.send(view=layout)
         
         async with aiosqlite.connect(DB_PATH) as db:
@@ -983,22 +1039,22 @@ class Utilities(commands.Cog):
         target = channel or interaction.channel
         
         if seconds < 0 or seconds > 21600:
-            err = BreezeErrorContainer("Out of Range", "Slowmode delay must be between 0 and 21600 seconds.")
-            await interaction.followup.send(view=err.build(), ephemeral=True)
+            err = create_error_section("Out of Range", "Slowmode delay must be between 0 and 21600 seconds.")
+            await interaction.followup.send(view=err, ephemeral=True)
             return
             
         await target.edit(slowmode_delay=seconds, reason=f"Slowmode updated by {interaction.user}")
         
         if seconds == 0:
-            broadcast = BreezeSuccessContainer("Slowmode Disabled", f"⏱ **Slowmode has been disabled in this channel by {interaction.user.mention}.**")
-            await target.send(view=broadcast.build())
-            success = BreezeSuccessContainer("Slowmode Updated", f"Disabled slowmode in {target.mention}.")
+            broadcast = create_success_section("Slowmode Disabled", f"⏱ **Slowmode has been disabled in this channel by {interaction.user.mention}.**")
+            await target.send(view=broadcast)
+            success = create_success_section("Slowmode Updated", f"Disabled slowmode in {target.mention}.")
         else:
-            broadcast = BreezeWarningContainer("Slowmode Enabled", f"⏱ **Slowmode has been set to `{seconds}s` in this channel by {interaction.user.mention}.**")
-            await target.send(view=broadcast.build())
-            success = BreezeSuccessContainer("Slowmode Updated", f"Set slowmode in {target.mention} to `{seconds}s`.")
+            broadcast = create_warning_section("Slowmode Enabled", f"⏱ **Slowmode has been set to `{seconds}s` in this channel by {interaction.user.mention}.**")
+            await target.send(view=broadcast)
+            success = create_success_section("Slowmode Updated", f"Set slowmode in {target.mention} to `{seconds}s`.")
             
-        await interaction.followup.send(view=success.build(), ephemeral=True)
+        await interaction.followup.send(view=success, ephemeral=True)
 
     @app_commands.command(name="purge", description="Bulk delete messages in this channel")
     @app_commands.describe(limit="Number of messages to delete (1 to 100)")
@@ -1020,63 +1076,107 @@ class Utilities(commands.Cog):
     # EXTENDED UTILITYslash COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    @app_commands.command(name="help", description="Show Breeze interactive visual commands menu")
+    @app_commands.command(name="help", description="Explore Breeze commands, setup guides and utilities")
     async def help_menu(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("help", interaction)
         
         pages = [
-            # Tickets
-            "🎫 **Breeze Support Ticket System**\n"
-            "• `/ticket setup`: Configure tickets roles and log channels.\n"
-            "• `/ticket panel`: Launches visual builder panel.\n"
-            "• `/ticket close` / `/ticket reopen`: Closes/Reopens channels.\n"
-            "• `/ticket delete`: Confirms ticket deletion.\n"
-            "• `/ticket claim` / `/ticket unclaim`: Claims ticket staff assignment.\n"
-            "• `/ticket rename [name]`: Rename channel.\n"
-            "• `/ticket add [member]` / `/ticket remove`: Modifies member access.\n"
-            "• `/ticket transcript`: Generates HTML logs.\n"
-            "• `/ticket stats`: Database stats overview.",
-            
-            # Reviews
-            "⭐ **Breeze Service Reviews Module**\n"
-            "• `/review setup [review_ch] [mod_ch]`: Setup reviews system.\n"
-            "• `/review submit`: Opens reviews submit modal.\n"
-            "• `/review list`: Paginated server reviews.\n"
-            "• `/review stats`: Star count and top reviewers board.\n"
-            "• `/review approve [id]` / `/review deny [id]`: Staff mod queue.",
-            
-            # Suggestions
-            "💡 **Breeze Suggestions System**\n"
-            "• `/suggest [category] [anonymous]`: Opens idea modal.\n"
-            "• `/suggestion setup [channel]`: Setup suggestions destination.\n"
-            "• `/suggestion approve [id] [reason]`: Approves suggestion and opens thread.\n"
-            "• `/suggestion deny [id] [reason]`: Denies suggestion and clears buttons.\n"
-            "• `/suggestion implement [id] [notes]`: Closes suggestion as completed.\n"
-            "• `/suggestion stats`: Suggestions approval rate metric.",
-            
-            # Welcome
-            "👋 **Breeze Welcome & Auto-Roles**\n"
-            "• `/welcome setup [ch] [dm_enabled] [log_ch] [auto_role]`: Configure welcome parameters.\n"
-            "• `/welcome preview` / `/welcome test`: Banners visual tester.\n"
-            "• `/welcome edit [Welcome Message/Rules] [text]`: Property updates.\n"
-            "• `/welcome disable`: Disable welcome greeting system.",
-            
-            # Admin & Moderation
-            "🛡 **Administration & General Utilities**\n"
-            "• `/lock` / `/unlock`: Lock/unlock channels permissions.\n"
-            "• `/slowmode [seconds]`: Set channel slowmode delay.\n"
-            "• `/purge [limit]`: Delete message logs (1-100).\n"
-            "• `/sticky create [text]` / `/sticky delete`: Auto reposting message.\n"
-            "• `/userinfo` / `/serverinfo`: Visual stats overview cards.\n"
-            "• `/avatar` / `/banner`: View member avatars and banners.\n"
-            "• `/ping`: Gateway and database latency stats.\n"
-            "• `/afk`: Away From Keyboard status toggle.\n"
-            "• `/snipe`: Snipes deleted/edited messages.\n"
-            "• `/remind set` / `/remind list`: Scheduler reminders."
+            # Index page (Welcome category overview)
+            {
+                "title": "Breeze Help Center",
+                "description": "Welcome to Breeze.\nSelect a category below to explore commands.",
+                "sections": [
+                    ("🌿 Welcome System", "Configure welcome messages, auto roles, greeting channels and previews."),
+                    ("🎫 Ticket System", "Professional ticket management with transcripts, claims and panels."),
+                    ("🛡️ Moderation", "Anti-swear, warnings, logging and moderation utilities."),
+                    ("💡 Suggestions System", "Enterprise-grade suggestions with moderator queues and approval loops."),
+                    ("⭐ Reviews System", "Service reviews module with moderation approval workflow."),
+                    ("⚙️ General Utilities", "Core utility commands and administrative options.")
+                ]
+            },
+            # Page 1: Welcome System
+            {
+                "title": "Welcome System",
+                "description": "Configure welcome messages, auto roles, greeting channels and previews.",
+                "sections": [
+                    ("⚙️ Welcome Setup", "`/welcome setup [ch] [dm_enabled] [log_ch] [auto_role]`\nConfigure the welcome greeting and logging systems."),
+                    ("👁️ Preview Welcome", "`/welcome preview`\nPreview the welcome greeting banner layout."),
+                    ("📝 Edit Welcome Option", "`/welcome edit [option] [text]`\nUpdate greeting message text or rules guidelines text."),
+                    ("🏷️ Welcome Variables", "`/welcome variables`\nDisplay all supported placeholders available for welcome messages."),
+                    ("❌ Disable Welcome", "`/welcome disable`\nDisable the welcome greeting system on the guild.")
+                ]
+            },
+            # Page 2: Ticket System
+            {
+                "title": "Ticket System",
+                "description": "Professional ticket management with transcripts, claims and panels.",
+                "sections": [
+                    ("⚙️ Ticket Setup", "`/ticket setup [role] [log_channel]`\nConfigure support staff role and logging channel."),
+                    ("🎫 Ticket Panel", "`/ticket panel [channel] [title] [description]`\nDeploy a persistent ticket panel with custom branding."),
+                    ("🔒 Ticket Control", "`/ticket close` / `/ticket reopen`\nClose or reopen an existing support ticket."),
+                    ("🗑️ Ticket Delete", "`/ticket delete`\nDelete the ticket channel (logs transcript if logging is configured)."),
+                    ("📌 Ticket Assignment", "`/ticket claim` / `/ticket unclaim`\nClaim or unclaim a ticket as a support staff member."),
+                    ("🏷️ Ticket Rename", "`/ticket rename [name]`\nRename the ticket channel safely."),
+                    ("👥 Ticket Members", "`/ticket add [member]` / `/ticket remove [member]`\nAdd or remove server members from a ticket channel."),
+                    ("📜 Ticket Transcript", "`/ticket transcript`\nManually generate and export an HTML transcript of messages."),
+                    ("📊 Ticket Stats", "`/ticket stats` / `/ticket list`\nView ticket stats and queue.")
+                ]
+            },
+            # Page 3: Suggestions System
+            {
+                "title": "Suggestions System",
+                "description": "Enterprise-grade suggestions with moderator queues and approval loops.",
+                "sections": [
+                    ("💡 Suggest Idea", "`/suggest [category] [anonymous]`\nSubmit an idea or feedback via interactive modal."),
+                    ("⚙️ Suggestion Setup", "`/suggestion setup [channel]`\nConfigure the suggestions target channel."),
+                    ("✅ Suggestion Approve", "`/suggestion approve [id] [reason]`\nApprove suggestion and open a discussion thread."),
+                    ("❌ Suggestion Deny", "`/suggestion deny [id] [reason]`\nDeny suggestion and notify the author."),
+                    ("🚀 Suggestion Implement", "`/suggestion implement [id] [notes]`\nMark suggestion as successfully implemented."),
+                    ("📊 Suggestion Stats", "`/suggestion stats`\nView suggestion approval and implementation rates.")
+                ]
+            },
+            # Page 4: Reviews System
+            {
+                "title": "Reviews System",
+                "description": "Service reviews module with moderation approval workflow.",
+                "sections": [
+                    ("⚙️ Review Setup", "`/review setup [review_ch] [mod_ch]`\nSetup reviews and moderation queue channels."),
+                    ("📝 Review Submit", "`/review submit`\nOpen interactive review submission modal."),
+                    ("📂 Review List", "`/review list`\nDisplay paginated lists of server reviews."),
+                    ("📊 Review Stats", "`/review stats`\nStar count breakdown and top reviewers leaderboard."),
+                    ("✅ Review Moderation", "`/review approve [id]` / `/review deny [id]`\nApprove or deny reviews in the staff channel.")
+                ]
+            },
+            # Page 5: Moderation
+            {
+                "title": "Moderation",
+                "description": "Anti-swear, warnings, logging and moderation utilities.",
+                "sections": [
+                    ("🤬 Antiswear Control", "`/antiswear enable` / `/antiswear disable`\nEnable or disable anti-swear filters."),
+                    ("📝 Antiswear Words", "`/antiswear add [word]` / `/antiswear remove [word]`\nAdd or remove words from swear list."),
+                    ("📂 Antiswear Settings", "`/antiswear list` / `/antiswear regex [mode]`\nList swear words or toggle regex mode."),
+                    ("🛡️ Moderation Whitelist", "`/whitelist role [role]` / `/whitelist channel [channel]`\nBypass anti-swear for specific role/channel."),
+                    ("⚠️ Warnings Manager", "`/warnings check [member]` / `/warnings clear [member]`\nCheck or clear user warning records.")
+                ]
+            },
+            # Page 6: General Utilities
+            {
+                "title": "General Utilities",
+                "description": "Core utility commands and administrative options.",
+                "sections": [
+                    ("🔒 Channel Lock & Unlock", "`/lock` / `/unlock`\nLock or unlock channel permissions for members."),
+                    ("⏱️ Slowmode & Purge", "`/slowmode [seconds]` / `/purge [limit]`\nSet slowmode delay or bulk delete messages."),
+                    ("📌 Sticky Messages", "`/sticky create [text]` / `/sticky delete`\nManage sticky messages in channels."),
+                    ("👤 Profile & Server", "`/userinfo` / `/serverinfo`\nDetailed visual stats overview cards."),
+                    ("🖼️ Avatar & Banner", "`/avatar` / `/banner`\nView member profile avatars and banners."),
+                    ("🏓 Bot Diagnostics", "`/ping` / `/botinfo` / `/uptime` / `/stats`\nCheck bot system stats and diagnostics."),
+                    ("⏰ Scheduler Reminders", "`/remind set` / `/remind list` / `/remind delete`\nSchedule, list, or delete reminders.")
+                ]
+            }
         ]
         
-        paginator = BreezePaginationContainer("Breeze Help Menu", pages, interaction.user.id)
+        paginator = create_pagination_menu("Breeze Help Menu", pages, interaction.user.id)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
     @app_commands.command(name="botinfo", description="Show information about the Breeze bot")
@@ -1084,17 +1184,22 @@ class Utilities(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("botinfo", interaction)
         
-        guilds_count = len(self.bot.guilds)
-        users_count = sum(g.member_count for g in self.bot.guilds)
+        ping = round(self.bot.latency * 1000)
+        uptime = str(datetime.now() - self.bot.start_time).split('.')[0]
+        os_name = platform.system()
+        python_version = platform.python_version()
+        discord_version = discord.__version__
         
-        card = BreezeInfoContainer("Bot Statistics Card", "Core framework configurations.")
-        card.add_section("Developer Team", "`Breeze Developer Team`")
-        card.add_section("Framework Library", "`discord.py v2.7.1` (Python 3.13)")
-        card.add_section("Total Server Guilds", f"`{guilds_count}` servers")
-        card.add_section("Total Users Served", f"`{users_count}` members")
-        card.add_section("Gateway Ping", f"`{self.bot.latency * 1000:.1f}ms`")
-        card.add_section("Shard Sharding Status", "`Single Shard ID: None`")
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "👥 Developer Team": "`Breeze Developer Team`",
+            "⚡ Gateway Latency": f"`{ping}ms`",
+            "⏰ System Uptime": f"`{uptime}`",
+            "💻 Host Platform": f"`{os_name}`",
+            "🐍 Python Version": f"`{python_version}`",
+            "📦 Library Version": f"`discord.py v{discord_version}`"
+        }
+        card = create_info_card("System Information", "Breeze Bot Diagnostics & System Details", sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="uptime", description="Check how long the bot has been running")
     async def command_uptime(self, interaction: discord.Interaction):
@@ -1106,10 +1211,12 @@ class Utilities(commands.Cog):
         hours, remainder = divmod(uptime.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
         
-        time_str = f"`{days}d {hours}h {minutes}m {seconds}s`"
-        card = BreezeInfoContainer("Bot System Uptime", f"The bot has been active for: {time_str}")
-        card.add_section("Startup Reference", f"Last Boot: <t:{int(self.bot.start_time.timestamp())}:F>")
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "⏰ Active Time": f"`{days}d {hours}h {minutes}m {seconds}s`",
+            "📅 Startup Reference": f"Last Boot: <t:{int(self.bot.start_time.timestamp())}:F>"
+        }
+        card = create_info_card("Bot System Uptime", None, sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="stats", description="Show detailed bot analytics metrics")
     async def stats(self, interaction: discord.Interaction):
@@ -1140,11 +1247,13 @@ class Utilities(commands.Cog):
                 leave_row = await cursor.fetchone()
                 leaves = leave_row[0] if leave_row else 0
 
-        card = BreezeInfoContainer("Guild Analytics Report", f"Metrics logging from this server.")
-        card.add_section("Command Executions (Guild)", f"`{total_commands}` invocations")
-        card.add_section("Most Popular Command", top_cmd)
-        card.add_section("Join/Leave Metrics", f"📈 Member Joins: `{joins}`\n📉 Member Leaves: `{leaves}`")
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "📈 Command Executions": f"`{total_commands}` invocations in this guild",
+            "🔥 Most Popular Command": top_cmd,
+            "📊 Join/Leave Metrics": f"• Joins: `{joins}`\n• Leaves: `{leaves}`"
+        }
+        card = create_info_card("Guild Analytics Report", "Metrics logging from this server.", sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="invite", description="Get the invite link for Breeze")
     async def command_invite(self, interaction: discord.Interaction):
@@ -1152,12 +1261,10 @@ class Utilities(commands.Cog):
         await log_command_usage("invite", interaction)
         
         link = f"https://discord.com/api/oauth2/authorize?client_id={self.bot.user.id}&permissions=8&scope=bot%20applications.commands"
-        card = BreezeSuccessContainer("Bot Invitation Link", f"You can invite the bot to other guilds using the button or link below.")
-        card.add_section("OAuth2 Link", f"[Authorize Breeze Bot]({link})")
-        
+        card = create_success_section("Bot Invitation Link", "You can invite the bot to other guilds using the button or link below.")
         btn = Button(label="Invite Bot", style=discord.ButtonStyle.link, url=link)
-        card.add_buttons(btn)
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        card.add_item(ActionRow(btn))
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="support", description="Get link to support server")
     async def support_server(self, interaction: discord.Interaction):
@@ -1165,26 +1272,22 @@ class Utilities(commands.Cog):
         await log_command_usage("support", interaction)
         
         url = "https://discord.gg/breeze"
-        card = BreezeInfoContainer("Breeze Help Desk Support", f"Need help setting up systems or reporting bugs? Join our support server.")
-        card.add_section("Support Link", f"[Join Support Server]({url})")
-        
+        card = create_info_card("Breeze Help Desk Support", "Need help setting up systems or reporting bugs? Join our support server.", {})
         btn = Button(label="Join Server", style=discord.ButtonStyle.link, url=url)
-        card.add_buttons(btn)
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        card.add_item(ActionRow(btn))
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="about", description="About the bot design philosophy")
     async def command_about(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("about", interaction)
         
-        card = BreezeInfoContainer(
-            "About Breeze Support Bot",
-            "Breeze is an enterprise-grade utility, ticket, suggestion, and review bot. "
-            "It is styled strictly utilizing Discord's modern Components V2 rendering layouts (Containers, sections, action rows, and text displays), "
-            "providing a seamless and completely consistent server experience."
-        )
-        card.add_section("Framework Stack", "Python + discord.py 2.7.1 + aiosqlite (WAL connection enabled)")
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "🍃 Overview": "Breeze is an enterprise-grade utility, ticket, suggestion, and review bot built entirely with Components V2.",
+            "🛠️ System Architecture": "Python + discord.py 2.7.1 + aiosqlite (WAL connection enabled)"
+        }
+        card = create_info_card("About Breeze Bot", "Our design philosophy and tech stack details.", sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="vote", description="Vote link for the bot")
     async def command_vote(self, interaction: discord.Interaction):
@@ -1192,12 +1295,10 @@ class Utilities(commands.Cog):
         await log_command_usage("vote", interaction)
         
         url = "https://top.gg/bot/breeze"
-        card = BreezeSuccessContainer("Vote for Breeze", "Support the development by voting for us!")
-        card.add_section("Top.gg Link", f"[Vote Here]({url})")
-        
+        card = create_success_section("Vote for Breeze", "Support the development by voting for us!")
         btn = Button(label="Vote", style=discord.ButtonStyle.link, url=url)
-        card.add_buttons(btn)
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        card.add_item(ActionRow(btn))
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="links", description="Show official bot links")
     async def links(self, interaction: discord.Interaction):
@@ -1209,12 +1310,14 @@ class Utilities(commands.Cog):
         website = "https://breeze.dev"
         vote = "https://top.gg/bot/breeze"
         
-        card = BreezeInfoContainer("Breeze Directory Links", "Useful official references.")
-        card.add_section("Web Portal", f"🌐 [Website]({website})")
-        card.add_section("OAuth Invite", f"🎫 [Authorize Bot]({invite})")
-        card.add_section("Help Desk", f"📢 [Support Server]({support})")
-        card.add_section("Top.gg Portal", f"⭐ [Vote Bot]({vote})")
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+        sections = {
+            "🌐 Web Portal": f"[Website]({website})",
+            "🎫 OAuth Invite": f"[Authorize Bot]({invite})",
+            "📢 Help Desk": f"[Support Server]({support})",
+            "⭐ Top.gg Portal": f"[Vote Bot]({vote})"
+        }
+        card = create_info_card("Breeze Directory Links", "Useful official references.", sections)
+        await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="report", description="Submit an issue report to server moderators")
     @app_commands.describe(issue="Description of the bug/incident to report")
@@ -1527,11 +1630,9 @@ class StickyGroup(app_commands.Group, name="sticky"):
             except Exception:
                 pass
                 
-        layout = LayoutView()
-        container = Container(accent_color=16776960)
-        container.add_item(TextDisplay(f"📌 **Sticky Message**\n\n{text}"))
-        layout.add_item(container)
-        new_msg = await interaction.channel.send(view=layout)
+        builder = BreezeContainerBuilder("Sticky Message", None, accent_color=16776960)
+        builder.add_section("Notice", text)
+        new_msg = await interaction.channel.send(view=builder.build())
         
         self.cog.sticky_last_ids[channel_id] = new_msg.id
         async with aiosqlite.connect(DB_PATH) as db:
@@ -1541,8 +1642,8 @@ class StickyGroup(app_commands.Group, name="sticky"):
             )
             await db.commit()
             
-        success = BreezeSuccessContainer("Sticky Message Posted", "Sticky message created successfully and pinned.")
-        await interaction.followup.send(view=success.build(), ephemeral=True)
+        success = create_success_section("Sticky Message Posted", "Sticky message created successfully and pinned.")
+        await interaction.followup.send(view=success, ephemeral=True)
 
     @app_commands.command(name="delete", description="Delete the sticky message in this channel")
     @app_commands.checks.has_permissions(manage_messages=True)
@@ -1552,8 +1653,8 @@ class StickyGroup(app_commands.Group, name="sticky"):
         channel_id = interaction.channel.id
         
         if channel_id not in self.cog.sticky_messages:
-            err = BreezeErrorContainer("Not Found", "There is no active sticky message configured in this channel.")
-            await interaction.followup.send(view=err.build(), ephemeral=True)
+            err = create_error_section("Not Found", "There is no active sticky message configured in this channel.")
+            await interaction.followup.send(view=err, ephemeral=True)
             return
             
         async with aiosqlite.connect(DB_PATH) as db:
@@ -1569,8 +1670,8 @@ class StickyGroup(app_commands.Group, name="sticky"):
                 pass
                 
         self.cog.sticky_messages.pop(channel_id, None)
-        success = BreezeSuccessContainer("Sticky Message Deleted", "Sticky banner removed successfully.")
-        await interaction.followup.send(view=success.build(), ephemeral=True)
+        success = create_success_section("Sticky Message Deleted", "Sticky banner removed successfully.")
+        await interaction.followup.send(view=success, ephemeral=True)
 
     @app_commands.command(name="list", description="List all active sticky messages in this server")
     @app_commands.checks.has_permissions(manage_messages=True)
@@ -1584,20 +1685,23 @@ class StickyGroup(app_commands.Group, name="sticky"):
                 rows = await cursor.fetchall()
                 
         if not rows:
-            info = BreezeInfoContainer("No Sticky Messages", "There are no active sticky messages configured on this server.")
-            await interaction.followup.send(view=info.build(), ephemeral=True)
+            info = create_info_card("No Sticky Messages", "There are no active sticky messages configured on this server.", {})
+            await interaction.followup.send(view=info, ephemeral=True)
             return
             
         pages = []
         for r in rows:
             channel = interaction.guild.get_channel(int(r[0]))
             mention = channel.mention if channel else f"#{r[0]}"
-            pages.append(
-                f"**Channel:** {channel.name if channel else r[0]} ({mention})\n"
-                f"**Text:** {r[1]}"
-            )
+            pages.append({
+                "title": "Sticky Message Details",
+                "sections": [
+                    ("📍 Target Channel", f"{mention} (`{r[0]}`)"),
+                    ("📝 Content Details", r[1])
+                ]
+            })
             
-        paginator = BreezePaginationContainer("Server Sticky Messages", pages, interaction.user.id, accent_color=16776960)
+        paginator = create_pagination_menu("Server Sticky Messages", pages, interaction.user.id, accent_color=16776960)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1616,8 +1720,8 @@ class RemindGroup(app_commands.Group, name="remind"):
         await log_command_usage("remind set", interaction)
         seconds = parse_duration(duration)
         if not seconds:
-            err = BreezeErrorContainer("Invalid Duration", "Please specify a correct duration tag like `10m`, `2h`, `1d`.")
-            await interaction.followup.send(view=err.build(), ephemeral=True)
+            err = create_error_section("Invalid Duration", "Please specify a correct duration tag like `10m`, `2h`, `1d`.")
+            await interaction.followup.send(view=err, ephemeral=True)
             return
             
         target_dt = datetime.now() + timedelta(seconds=seconds)
@@ -1635,10 +1739,12 @@ class RemindGroup(app_commands.Group, name="remind"):
             await db.commit()
             
         timestamp_epoch = int(target_dt.timestamp())
-        success = BreezeSuccessContainer("Reminder Registered", f"Reminder alert successfully scheduled.")
-        success.add_section("Alert Time", f"<t:{timestamp_epoch}:F> (<t:{timestamp_epoch}:R>)")
-        success.add_section("Reminder Text", text)
-        await interaction.followup.send(view=success.build(), ephemeral=True)
+        sections = {
+            "⏰ Alert Time": f"<t:{timestamp_epoch}:F> (<t:{timestamp_epoch}:R>)",
+            "📝 Reminder Text": text
+        }
+        success = create_info_card("Reminder Registered", "Reminder alert successfully scheduled.", sections)
+        await interaction.followup.send(view=success, ephemeral=True)
 
     @app_commands.command(name="list", description="List your active reminders")
     async def list_reminders(self, interaction: discord.Interaction):
@@ -1654,8 +1760,8 @@ class RemindGroup(app_commands.Group, name="remind"):
                 rows = await cursor.fetchall()
                 
         if not rows:
-            info = BreezeInfoContainer("No Reminders", "You have no active reminders scheduled.")
-            await interaction.followup.send(view=info.build(), ephemeral=True)
+            info = create_info_card("No Reminders", "You have no active reminders scheduled.", {})
+            await interaction.followup.send(view=info, ephemeral=True)
             return
             
         pages = []
@@ -1671,13 +1777,15 @@ class RemindGroup(app_commands.Group, name="remind"):
             except Exception:
                 time_display = target_time_str
                 
-            pages.append(
-                f"**Reminder ID:** `{rem_id}`\n"
-                f"**Alert Time:** {time_display}\n"
-                f"**Reminder Content:** {rem_text}"
-            )
+            pages.append({
+                "title": f"Reminder #{rem_id}",
+                "sections": [
+                    ("⏰ Alert Time", time_display),
+                    ("📝 Content", rem_text)
+                ]
+            })
             
-        paginator = BreezePaginationContainer("Your Scheduled Reminders", pages, interaction.user.id)
+        paginator = create_pagination_menu("Your Scheduled Reminders", pages, interaction.user.id)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
     @app_commands.command(name="delete", description="Delete an active reminder by ID")

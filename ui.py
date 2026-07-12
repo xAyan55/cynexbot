@@ -1,10 +1,11 @@
 import discord
-from discord.ui import LayoutView, Container, TextDisplay, Separator, Section, ActionRow, Button
+from discord.ui import LayoutView, Container, TextDisplay, Separator, Section, ActionRow, Button, Thumbnail, MediaGallery
+from discord import MediaGalleryItem, SeparatorSpacing
 from typing import Optional, List
 
 class BreezeContainerBuilder:
     """Universal Breeze UI Builder using Components V2 Layouts with auto-splitting."""
-    def __init__(self, title: str, description: Optional[str] = None, accent_color: int = 3447003):
+    def __init__(self, title: str, description: Optional[str] = None, accent_color: int = 3447003, thumbnail_url: Optional[str] = None):
         self.layout = LayoutView()
         self.accent_color = accent_color
         self.containers = []
@@ -14,6 +15,10 @@ class BreezeContainerBuilder:
         if description:
             header_text += f"\n{description}"
         self.current_container.add_item(TextDisplay(header_text))
+        
+        if thumbnail_url:
+            self.current_container.add_item(Thumbnail(url=thumbnail_url))
+            
         self.current_container.add_item(Separator())
 
     def _new_container(self):
@@ -22,21 +27,21 @@ class BreezeContainerBuilder:
         self.containers.append(container)
         self.current_container = container
 
-    def _ensure_space(self):
+    def _ensure_space(self, items_needed: int = 1):
         # A container can have max 5 child components
-        if len(self.current_container.children) >= 5:
+        if len(self.current_container.children) + items_needed > 5:
             # If we already have 5 top-level containers in LayoutView, we can't add more.
             # Otherwise, spin up a new container.
             if len(self.layout.children) < 5:
                 self._new_container()
 
     def add_section(self, title: str, content: str, accessory = None):
-        """Adds a labeled section to the container."""
+        """Adds a labeled native Section to the container."""
         self._ensure_space()
         if accessory is not None:
-            self.current_container.add_item(Section(title, content, accessory=accessory))
+            self.current_container.add_item(Section(title=title, text=content, accessory=accessory))
         else:
-            self.current_container.add_item(TextDisplay(f"**{title}**\n{content}"))
+            self.current_container.add_item(Section(title=title, text=content))
         return self
 
     def add_text(self, text: str):
@@ -58,6 +63,13 @@ class BreezeContainerBuilder:
         return self
 
     def build(self) -> LayoutView:
+        # If the last item is a separator, pop it for a cleaner look
+        try:
+            if len(self.current_container.children) > 0 and isinstance(self.current_container.children[-1], Separator):
+                self.current_container.children.pop()
+        except Exception:
+            pass
+
         # Standard footer addition
         if len(self.layout.children) < 5:
             if len(self.current_container.children) <= 3:
@@ -92,8 +104,8 @@ class BreezeInfoContainer(BreezeContainerBuilder):
         super().__init__(f"ℹ️ {title}", description, accent_color=3447003) # Blue
 
 class BreezePaginationContainer(LayoutView):
-    """Component V2 pagination view displaying pages of content."""
-    def __init__(self, title: str, pages: List[str], user_id: int, accent_color: int = 3447003):
+    """Component V2 pagination view displaying pages of content dynamically."""
+    def __init__(self, title: str, pages: List[dict], user_id: int, accent_color: int = 3447003):
         super().__init__(timeout=180)
         self.title = title
         self.pages = pages
@@ -104,16 +116,26 @@ class BreezePaginationContainer(LayoutView):
 
     def update_layout(self):
         self.clear_items()
-        container = Container(accent_color=self.accent_color)
-        self.add_item(container)
         
-        container.add_item(TextDisplay(
-            f"🍃 **Breeze** | **{self.title}**\n"
-            f"*Page {self.current_page + 1} of {len(self.pages)}*\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"{self.pages[self.current_page]}"
-        ))
+        page_data = self.pages[self.current_page]
         
+        # Handle string fallbacks safely by parsing to dict
+        if isinstance(page_data, str):
+            page_data = {
+                "title": self.title,
+                "sections": [("Page Content", page_data)]
+            }
+            
+        builder = BreezeContainerBuilder(
+            title=page_data.get("title", self.title),
+            description=page_data.get("description"),
+            accent_color=self.accent_color
+        )
+        
+        for sec_title, sec_desc in page_data.get("sections", []):
+            builder.add_section(sec_title, sec_desc)
+            builder.add_separator()
+            
         prev_btn = Button(
             label="◀ Previous",
             style=discord.ButtonStyle.secondary,
@@ -146,13 +168,53 @@ class BreezePaginationContainer(LayoutView):
         prev_btn.callback = prev_callback
         next_btn.callback = next_callback
         
-        container.add_item(ActionRow(prev_btn, next_btn))
+        builder.add_buttons(prev_btn, next_btn)
         
-        # Add footer to pagination container
-        container.add_item(TextDisplay(
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🍃 *Breeze Bot — Premium Utilities & Security*"
-        ))
-        
+        layout_view = builder.build()
+        for child in layout_view.children:
+            self.add_item(child)
+            
         from tickets import validate_v2_layout
         validate_v2_layout(self)
+
+
+# Shared UI Helper Functions
+
+def create_info_card(title: str, description: Optional[str], sections_dict: dict, thumbnail_url: Optional[str] = None, accent_color: int = 3447003) -> LayoutView:
+    builder = BreezeContainerBuilder(title, description, accent_color=accent_color, thumbnail_url=thumbnail_url)
+    for sec_title, sec_desc in sections_dict.items():
+        builder.add_section(sec_title, sec_desc)
+        builder.add_separator()
+    return builder.build()
+
+def create_success_section(title: str, message: str) -> LayoutView:
+    builder = BreezeSuccessContainer(title)
+    builder.add_section("Information", message)
+    return builder.build()
+
+def create_warning_section(title: str, message: str) -> LayoutView:
+    builder = BreezeWarningContainer(title)
+    builder.add_section("Warning Detail", message)
+    return builder.build()
+
+def create_error_section(title: str, message: str) -> LayoutView:
+    builder = BreezeErrorContainer(title)
+    builder.add_section("Error Detail", message)
+    return builder.build()
+
+def create_user_card(member: discord.Member, sections_dict: dict) -> LayoutView:
+    builder = BreezeContainerBuilder(f"👤 User Profile", f"Details for {member.mention}", accent_color=3447003, thumbnail_url=member.display_avatar.url if member.display_avatar else None)
+    for sec_title, sec_desc in sections_dict.items():
+        builder.add_section(sec_title, sec_desc)
+        builder.add_separator()
+    return builder.build()
+
+def create_server_card(guild: discord.Guild, sections_dict: dict) -> LayoutView:
+    builder = BreezeContainerBuilder(f"🏠 Server Information", f"Detailed breakdown of **{guild.name}**", accent_color=3447003, thumbnail_url=guild.icon.url if guild.icon else None)
+    for sec_title, sec_desc in sections_dict.items():
+        builder.add_section(sec_title, sec_desc)
+        builder.add_separator()
+    return builder.build()
+
+def create_pagination_menu(title: str, pages_data: List[dict], user_id: int, accent_color: int = 3447003) -> LayoutView:
+    return BreezePaginationContainer(title, pages_data, user_id, accent_color)

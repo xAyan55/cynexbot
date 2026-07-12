@@ -314,18 +314,24 @@ class MessageTracker(commands.Cog):
             return
 
         pages = []
-        lines = []
-        for idx, row in enumerate(rows, 1):
-            user_id, total, atts, imgs = row
-            member_obj = interaction.guild.get_member(int(user_id))
-            user_str = member_obj.mention if member_obj else f"`ID: {user_id}`"
-            lines.append(f"**#{idx}** {user_str} — **{total}** messages (`{atts}` files, `{imgs}` pictures)")
-            
-            if len(lines) == 10:
-                pages.append("\n".join(lines))
-                lines = []
-        if lines:
-            pages.append("\n".join(lines))
+        page_size = 4
+        for i in range(0, len(rows), page_size):
+            chunk = rows[i:i + page_size]
+            page_sections = []
+            for offset, row in enumerate(chunk):
+                idx = i + offset + 1
+                user_id, total, atts, imgs = row
+                member_obj = interaction.guild.get_member(int(user_id))
+                user_str = member_obj.mention if member_obj else f"User ID: {user_id}"
+                
+                sec_title = f"💬 Chat Rank #{idx}: {member_obj.display_name if member_obj else user_id}"
+                sec_desc = f"• **Member:** {user_str}\n• **Total Messages:** `{total}`\n• **Details:** `{atts}` files, `{imgs}` pictures"
+                page_sections.append((sec_title, sec_desc))
+            pages.append({
+                "title": "Server Chat Activity Leaderboard",
+                "description": f"Page {i//page_size + 1} of {(len(rows) - 1)//page_size + 1}",
+                "sections": page_sections
+            })
 
         paginator = BreezePaginationContainer("Server Chat Activity Leaderboard", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)

@@ -314,18 +314,23 @@ class InviteTracker(commands.Cog):
 
         # Paginate results
         pages = []
-        lines = []
-        for invited_user_id, code, status in rows:
-            user_obj = interaction.guild.get_member(int(invited_user_id))
-            user_str = user_obj.mention if user_obj else f"`User ID: {invited_user_id}`"
-            status_emoji = "🟢 Active" if status == "joined" else "🔴 Left"
-            lines.append(f"• {user_str} (Code: `{code}`) | {status_emoji}")
-            
-            if len(lines) == 10:
-                pages.append("\n".join(lines))
-                lines = []
-        if lines:
-            pages.append("\n".join(lines))
+        page_size = 4
+        for i in range(0, len(rows), page_size):
+            chunk = rows[i:i + page_size]
+            page_sections = []
+            for invited_user_id, code, status in chunk:
+                user_obj = interaction.guild.get_member(int(invited_user_id))
+                user_str = user_obj.mention if user_obj else f"User ID: {invited_user_id}"
+                status_emoji = "🟢 Active" if status == "joined" else "🔴 Left"
+                
+                sec_title = f"👤 Invited User: {user_obj.display_name if user_obj else invited_user_id}"
+                sec_desc = f"• **User:** {user_str}\n• **Invite Code:** `{code}`\n• **Status:** {status_emoji}"
+                page_sections.append((sec_title, sec_desc))
+            pages.append({
+                "title": f"Invited Members",
+                "description": f"Members invited by {member.display_name} | Page {i//page_size + 1} of {(len(rows) - 1)//page_size + 1}",
+                "sections": page_sections
+            })
 
         paginator = BreezePaginationContainer(f"Members Invited by {member.name}", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)
@@ -357,18 +362,23 @@ class InviteTracker(commands.Cog):
             return
 
         pages = []
-        lines = []
-        for idx, row in enumerate(rows, 1):
-            user_id, net, total, reg, left, fake = row
-            member_obj = interaction.guild.get_member(int(user_id))
-            user_str = member_obj.mention if member_obj else f"`ID: {user_id}`"
-            lines.append(f"**#{idx}** {user_str} — **{net}** valid (`{reg}` joins, `{left}` left, `{fake}` fake)")
-            
-            if len(lines) == 10:
-                pages.append("\n".join(lines))
-                lines = []
-        if lines:
-            pages.append("\n".join(lines))
+        page_size = 4
+        for i in range(0, len(rows), page_size):
+            chunk = rows[i:i + page_size]
+            page_sections = []
+            for offset, row in enumerate(chunk):
+                idx = i + offset + 1
+                user_id, net, total, reg, left, fake = row
+                member_obj = interaction.guild.get_member(int(user_id))
+                user_str = member_obj.mention if member_obj else f"User ID: {user_id}"
+                sec_title = f"🏆 Rank #{idx}: {member_obj.display_name if member_obj else user_id}"
+                sec_desc = f"• **Member:** {user_str}\n• **Net Invites:** `{net}` valid\n• **Details:** `{reg}` joins, `{left}` left, `{fake}` fake"
+                page_sections.append((sec_title, sec_desc))
+            pages.append({
+                "title": "Top Inviters Leaderboard",
+                "description": f"Page {i//page_size + 1} of {(len(rows) - 1)//page_size + 1}",
+                "sections": page_sections
+            })
 
         paginator = BreezePaginationContainer("Top Inviters Leaderboard", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)

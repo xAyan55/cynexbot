@@ -18,25 +18,29 @@ logger = logging.getLogger("Breeze.ReactionRoles")
 DB_PATH = "breeze.db"
 
 # ══════════════════════════════════════════════════════════════════════
-def build_panel_layout(title: str, description: Optional[str], mappings: dict, guild: discord.Guild, multi_role: bool) -> discord.ui.LayoutView:
-    builder = BreezeContainerBuilder(title, description, accent_color=3447003) # Blue accent
+def build_panel_embed(title: str, description: Optional[str], mappings: dict, guild: discord.Guild, multi_role: bool) -> discord.Embed:
+    embed = discord.Embed(
+        title=title,
+        description=description or "React to get your roles!",
+        color=3447003
+    )
     
-    body = "**Reaction Role Mappings:**\n"
+    body = ""
     if mappings:
         lines = []
         for emoji_str, role_id in mappings.items():
             role = guild.get_role(int(role_id))
-            role_str = role.mention if role else f"`Unknown Role ID: {role_id}`"
+            role_str = role.mention if role else f"Unknown Role (ID: {role_id})"
             lines.append(f"{emoji_str} → {role_str}")
-        body += "\n".join(lines)
+        body = "\n".join(lines)
     else:
-        body += "*No roles mapped yet. Use `/reactionroles add` to add one.*"
+        body = "*No roles mapped yet. Use `/reactionroles add` to add one.*"
         
-    builder.add_section("Roles List", body)
+    embed.add_field(name="Roles List", value=body, inline=False)
     
     mode_str = "Multi-Role Allowed" if multi_role else "Unique / Single-Role Only"
-    builder.add_text(f"🎭 *React below to get your role | Mode: {mode_str}*")
-    return builder.build()
+    embed.set_footer(text=f"🎭 React below to get your role | Mode: {mode_str}")
+    return embed
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -166,9 +170,9 @@ class ReactionRoles(commands.Cog):
             return
 
         # Send empty panel message
-        layout = build_panel_layout(title, description, {}, interaction.guild, multi_role)
+        embed = build_panel_embed(title, description, {}, interaction.guild, multi_role)
         try:
-            panel_msg = await channel.send(view=layout)
+            panel_msg = await channel.send(embed=embed)
         except Exception as e:
             card = BreezeErrorContainer("Send Message Failed", f"Failed to send panel embed: {e}")
             await interaction.followup.send(view=card.build(), ephemeral=True)
@@ -284,14 +288,14 @@ class ReactionRoles(commands.Cog):
         self.mappings_cache[message_id][emoji_key] = str(role.id)
 
         # 5. Rebuild embed and edit panel message
-        updated_layout = build_panel_layout(
+        updated_embed = build_panel_embed(
             panel["title"],
             panel["description"],
             self.mappings_cache[message_id],
             guild,
             panel["multi_role"]
         )
-        await message.edit(embed=None, view=updated_layout)
+        await message.edit(embed=updated_embed, view=None)
 
         card = BreezeSuccessContainer("Mapping Registered", f"Reacting with {emoji_key} will now grant the role {role.mention}.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
@@ -339,14 +343,14 @@ class ReactionRoles(commands.Cog):
                 message = await ch.fetch_message(int(message_id))
                 
                 # Rebuild and edit panel message
-                updated_layout = build_panel_layout(
+                updated_embed = build_panel_embed(
                     panel["title"],
                     panel["description"],
                     mappings,
                     guild,
                     panel["multi_role"]
                 )
-                await message.edit(embed=None, view=updated_layout)
+                await message.edit(embed=updated_embed, view=None)
 
                 # Clear reactions (removes bot and user reactions of this emoji)
                 if ch.permissions_for(guild.me).manage_messages:
@@ -379,23 +383,28 @@ class ReactionRoles(commands.Cog):
         panel = self.panels_cache[message_id]
         mappings = self.mappings_cache.get(message_id, {})
 
-        desc = (
-            f"• **Panel Message ID**: `{message_id}`\n"
-            f"• **Target Channel**: <#{panel['channel_id']}>\n"
-            f"• **Settings**: `{'Multi-Role Allowed' if panel['multi_role'] else 'Unique Mode (Single Role)'}`\n\n"
-            f"**Active Mappings:**\n"
+        builder = BreezeContainerBuilder(f"Reaction Roles List: {panel['title']}", "Visual settings configuration overview.")
+        
+        info_text = (
+            f"• **Panel Message ID:** `{message_id}`\n"
+            f"• **Target Channel:** <#{panel['channel_id']}>\n"
+            f"• **Settings Mode:** `{'Multi-Role Allowed' if panel['multi_role'] else 'Unique Mode (Single Role)'}`"
         )
-
+        builder.add_section("⚙️ Panel Details", info_text)
+        builder.add_separator()
+        
+        mapping_lines = []
         if mappings:
             for emoji_str, role_id in mappings.items():
                 role = guild.get_role(int(role_id))
-                role_str = role.mention if role else f"`Unknown Role (ID: {role_id})`"
-                desc += f"• {emoji_str} → {role_str}\n"
+                role_str = role.mention if role else f"Unknown Role (ID: {role_id})"
+                mapping_lines.append(f"• {emoji_str} → {role_str}")
+            mappings_text = "\n".join(mapping_lines)
         else:
-            desc += "*No mappings configured yet. Use `/reactionroles add` to add.*"
-
-        card = BreezeInfoContainer(f"Reaction Roles List: {panel['title']}", desc)
-        await interaction.followup.send(view=card.build(), ephemeral=True)
+            mappings_text = "*No mappings configured yet. Use `/reactionroles add` to associate.*"
+            
+        builder.add_section("🎭 Active Mappings", mappings_text)
+        await interaction.followup.send(view=builder.build(), ephemeral=True)
 
     @reactionroles.command(name="delete", description="Delete a reaction role panel and clean up databases")
     async def reaction_roles_delete(self, interaction: discord.Interaction, message_id: str):

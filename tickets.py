@@ -23,7 +23,7 @@ from discord.ui import (
     Button
 )
 from discord import MediaGalleryItem, SeparatorSpacing
-from ui import BreezeInfoContainer
+from ui import BreezeInfoContainer, create_info_card, create_success_section, create_error_section, create_warning_section, BreezeContainerBuilder
 
 logger = logging.getLogger("Breeze.Tickets")
 DB_PATH = "breeze.db"
@@ -666,22 +666,27 @@ class OpenTicketModal(discord.ui.Modal):
             # Render V2 greeting welcome components
             accent_color_int = parse_color(self.panel_data.get('accent_color', '')) or 3447003 # Blurple
             
-            root_container = Container(accent_color=accent_color_int)
-            root_container.add_item(TextDisplay(
-                f"# Ticket {ticket_num}\n"
-                f"Hello {user.mention}, thank you for opening a support ticket!\n"
-                f"• **Subject:** {self.subject.value}\n"
-                f"• **Category:** {self.category}\n"
-                f"• **Description:** {self.description.value or 'No description provided.'}"
+            # Container 1: Info Header & Subject
+            container1 = Container(accent_color=accent_color_int)
+            container1.add_item(TextDisplay(f"🎫 **Ticket {ticket_num}**\nHello {user.mention}, thank you for opening a support ticket!"))
+            container1.add_item(Separator())
+            container1.add_item(Section(
+                title="📝 Subject & Description",
+                text=f"**Subject:** {self.subject.value}\n**Description:** {self.description.value or 'No description provided.'}"
             ))
-            root_container.add_item(Separator())
-            
-            welcome_accessory = Button(label="🔐 Support", style=discord.ButtonStyle.secondary, disabled=True, custom_id="welcome_dummy_accessory")
-            root_container.add_item(Section(
-                "Welcome to Support Channel",
-                "Please stand by. Support staff will respond shortly.",
-                accessory=welcome_accessory
-            ))
+
+            # Container 2: Ticket Status
+            container2 = Container(accent_color=accent_color_int)
+            container2.add_item(Section(title="👤 Created By", text=f"{user.mention} (`{user.id}`)"))
+            container2.add_item(Separator())
+            container2.add_item(Section(title="📂 Category", text=f"{self.category}"))
+            container2.add_item(Separator())
+            container2.add_item(Section(title="👥 Assigned Staff", text="`Unassigned`"))
+
+            # Container 3: Status & Controls
+            container3 = Container(accent_color=accent_color_int)
+            container3.add_item(Section(title="ℹ️ Current Status", text="`Open`"))
+            container3.add_item(Separator())
             
             # Action Row containing Close, Claim, Transcript, Delete buttons
             welcome_row = ActionRow(
@@ -690,10 +695,12 @@ class OpenTicketModal(discord.ui.Modal):
                 Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket", emoji="📄"),
                 Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket", emoji="🗑")
             )
-            root_container.add_item(welcome_row)
+            container3.add_item(welcome_row)
             
             layout_view = LayoutView()
-            layout_view.add_item(root_container)
+            layout_view.add_item(container1)
+            layout_view.add_item(container2)
+            layout_view.add_item(container3)
             
             await channel.send(view=layout_view)
             await interaction.followup.send(f"🎫 **Your ticket has been created!** {channel.mention}", ephemeral=True)
@@ -745,18 +752,19 @@ class GlobalTicketWelcomeView(discord.ui.View):
                 
             root_container = Container(accent_color=16711680)  # Red
             root_container.add_item(TextDisplay(
-                f"🔒 **This ticket was closed by {user.mention}.**\n"
-                f"The ticket creator can no longer send messages in this channel.\n"
-                f"Staff can manage this closed channel using the options below."
+                f"🔒 **Ticket Closed**\n"
+                f"The ticket creator can no longer send messages in this channel."
             ))
             root_container.add_item(Separator())
             
             reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="breeze:reopen_ticket")
             root_container.add_item(Section(
                 "Manage Closed Ticket",
-                "Reopen the channel or trigger transcript generation.",
+                "Staff can reopen the channel or trigger transcript generation.",
                 accessory=reopen_accessory
             ))
+            root_container.add_item(Separator())
+            root_container.add_item(Section(title="Closed By", text=f"{user.mention}"))
             
             layout_view = LayoutView()
             layout_view.add_item(root_container)
@@ -797,15 +805,17 @@ class GlobalTicketWelcomeView(discord.ui.View):
             await update_ticket_claim(str(channel.id), str(user.id))
             
             root_container = Container(accent_color=3447003)
-            root_container.add_item(TextDisplay(f"👤 **Ticket claimed by {user.mention}.**\nThis staff member will now assist you."))
+            root_container.add_item(TextDisplay(f"👤 **Ticket Claimed**\nThis staff member will now assist you."))
             root_container.add_item(Separator())
             
             unclaim_btn = Button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="breeze:unclaim_ticket")
             root_container.add_item(Section(
-                "Claim Actions",
-                "Staff can release this ticket if needed.",
+                title="Claim Actions",
+                text="Staff can release this ticket if needed.",
                 accessory=unclaim_btn
             ))
+            root_container.add_item(Separator())
+            root_container.add_item(Section(title="Staff Member", text=f"{user.mention}"))
             
             layout_view = LayoutView()
             layout_view.add_item(root_container)
@@ -975,7 +985,9 @@ class GlobalTicketControlView(discord.ui.View):
                 await channel.set_permissions(creator, send_messages=True, read_messages=True)
                 
             root = Container(accent_color=65280) # Green
-            root.add_item(TextDisplay(f"🔓 **Ticket reopened by {user.mention}.**\nMessaging has been restored."))
+            root.add_item(TextDisplay(f"🔓 **Ticket Reopened**\nMessaging has been restored."))
+            root.add_item(Separator())
+            root.add_item(Section(title="Reopened By", text=f"{user.mention}"))
             
             layout = LayoutView()
             layout.add_item(root)
@@ -1014,7 +1026,9 @@ class GlobalTicketControlView(discord.ui.View):
             await update_ticket_claim(str(channel.id), None)
             
             root = Container(accent_color=15105570) # Orange
-            root.add_item(TextDisplay(f"👤 **Ticket unclaimed by {user.mention}.**\nIt is now open for any staff member."))
+            root.add_item(TextDisplay(f"👤 **Ticket Unclaimed**\nIt is now open for support staff assistance."))
+            root.add_item(Separator())
+            root.add_item(Section(title="Unclaimed By", text=f"{user.mention}"))
             
             layout = LayoutView()
             layout.add_item(root)
@@ -1033,7 +1047,7 @@ class GlobalTicketControlView(discord.ui.View):
 # TICKET PANEL CONFIGURATION BUILDER VIEW
 # ══════════════════════════════════════════════════════════════════════
 
-class TicketPanelBuilderView(discord.ui.View):
+class TicketPanelBuilderView(discord.ui.LayoutView):
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
         logger.exception(f"Error in view {self.__class__.__name__} for item {item.custom_id or item.label if hasattr(item, 'custom_id') else 'unknown'}:")
         msg = f"❌ An error occurred: {error}"
@@ -1058,21 +1072,17 @@ class TicketPanelBuilderView(discord.ui.View):
             "thumbnail_url": "",
             "support_roles": []
         }
+        self._msg = None
         
     def setup_items(self):
-        self.clear_items()
-        self.add_item(ConfigurePanelTextButton(self))
-        self.add_item(ConfigurePanelCategoriesButton(self))
-        self.add_item(ConfigurePanelMediaButton(self))
-        self.add_item(PublishPanelButton(self))
+        pass
         
     async def update_view(self, interaction: discord.Interaction):
         try:
-            embed = discord.Embed(
-                title="🎫 Breeze Ticket Panel Builder 🎫",
-                description="Design your Components V2 support ticket panels visually.",
-                color=discord.Color.green()
-            )
+            self.clear_items()
+            
+            accent_int = parse_color(self.config['accent_color']) or 5763719
+            builder = BreezeContainerBuilder("🎫 Breeze Ticket Panel Builder 🎫", "Design your Components V2 support ticket panels visually.", accent_color=accent_int)
             
             cats_raw = ", ".join([c['name'] for c in self.config['categories']]) or "None"
             desc_val = self.config['description']
@@ -1088,15 +1098,13 @@ class TicketPanelBuilderView(discord.ui.View):
             if len(thumb_val) > 150:
                 thumb_val = thumb_val[:147] + "..."
                 
-            embed.add_field(
-                name="📋 Panel Settings",
-                value=f"• **Title:** `{self.config['title']}`\n"
-                      f"• **Description:** `{desc_val}`\n"
-                      f"• **Accent Color:** `{self.config['accent_color']}`\n"
-                      f"• **Categories:** `{cats_val}`\n"
-                      f"• **Image URL:** `{img_val}`\n"
-                      f"• **Thumbnail URL:** `{thumb_val}`",
-                inline=False
+            builder.add_section("📋 Panel Settings", 
+                f"• **Title:** `{self.config['title']}`\n"
+                f"• **Description:** `{desc_val}`\n"
+                f"• **Accent Color:** `{self.config['accent_color']}`\n"
+                f"• **Categories:** `{cats_val}`\n"
+                f"• **Image URL:** `{img_val}`\n"
+                f"• **Thumbnail URL:** `{thumb_val}`"
             )
             
             tree = "Panel Container (Root)\n"
@@ -1108,12 +1116,31 @@ class TicketPanelBuilderView(discord.ui.View):
                 tree += "├─ Media Gallery\n"
             tree += "└─ Action Row (🎫 Create Ticket)"
             
-            embed.add_field(name="🌲 Panel V2 Layout Tree", value=f"```\n{tree}\n```", inline=False)
+            builder.add_section("🌲 Panel V2 Layout Tree", f"```\n{tree}\n```")
+            self.add_item(builder.current_container)
+            
+            # Re-add control buttons
+            row_0 = ActionRow(
+                ConfigurePanelTextButton(self),
+                ConfigurePanelCategoriesButton(self),
+                ConfigurePanelMediaButton(self)
+            )
+            row_1 = ActionRow(
+                PublishPanelButton(self)
+            )
+            self.add_item(row_0)
+            self.add_item(row_1)
             
             if not interaction.response.is_done():
-                await interaction.response.edit_message(embed=embed, view=self)
+                await interaction.response.edit_message(view=self)
             else:
-                await interaction.followup.edit_message(message_id=interaction.message.id, embed=embed, view=self)
+                if self._msg:
+                    try:
+                        await interaction.followup.edit_message(message_id=self._msg.id, view=self)
+                    except Exception:
+                        self._msg = await interaction.followup.send(view=self, ephemeral=True)
+                else:
+                    self._msg = await interaction.followup.send(view=self, ephemeral=True)
         except Exception as e:
             logger.exception("Error in update_view:")
 
@@ -1377,16 +1404,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
             await interaction.response.defer(ephemeral=True)
             
             view = TicketPanelBuilderView(str(user.id), str(interaction.guild_id))
-            view.setup_items()
-            
-            embed = discord.Embed(
-                title="🎫 Breeze Ticket Panel Builder 🎫",
-                description="Design your Components V2 support ticket panels visually.",
-                color=discord.Color.green()
-            )
-            embed.add_field(name="🌲 Panel V2 Layout Tree", value="```\nPanel Container (Root)\n+- Action Row (🎫 Create Ticket)\n```")
-            
-            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+            await view.update_view(interaction)
         except Exception as e:
             logger.exception("Error in /ticket panel:")
             if not interaction.response.is_done():
@@ -1700,18 +1718,15 @@ class TicketGroup(app_commands.Group, name="ticket"):
                 staff = guild.get_member(int(ticket['claimed_by']))
                 claimed = staff.mention if staff else f"`{ticket['claimed_by']}`"
                 
-            embed = discord.Embed(
-                title=f"🎫 Ticket Details: {ticket['ticket_id']}",
-                color=discord.Color.blue()
-            )
-            embed.add_field(name="User", value=creator_mention, inline=True)
-            embed.add_field(name="Category", value=ticket['category'], inline=True)
-            embed.add_field(name="Subject", value=ticket['subject'], inline=True)
-            embed.add_field(name="Status", value=f"`{ticket['status'].upper()}`", inline=True)
-            embed.add_field(name="Claimed Staff", value=claimed, inline=True)
-            embed.add_field(name="Created At", value=ticket['created_at'], inline=True)
-            
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            sections = {
+                "👤 Target User": creator_mention,
+                "📂 Ticket Category": f"`{ticket['category']}`",
+                "📝 Ticket Subject": ticket['subject'],
+                "🛡️ Status & Staff": f"• **Status:** `{ticket['status'].upper()}`\n• **Claimed Staff:** {claimed}",
+                "📅 Timeline Details": f"• **Created At:** {ticket['created_at']}"
+            }
+            card = create_info_card(f"🎫 Ticket Details: {ticket['ticket_id']}", None, sections)
+            await interaction.response.send_message(view=card, ephemeral=True)
         except Exception as e:
             logger.exception("Error in /ticket info:")
             await interaction.response.send_message(f"❌ Failed to retrieve info: {e}", ephemeral=True)
