@@ -89,6 +89,7 @@ class BreezeBot(commands.Bot):
         await self.load_extension("boosts")
         await self.load_extension("activity")
         await self.load_extension("reactionroles")
+        await self.load_extension("leveling")
         
         await self.tree.sync()
         logger.info("Command tree synced globally.")

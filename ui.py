@@ -17,7 +17,7 @@ class BreezeContainerBuilder:
         self.current_container.add_item(TextDisplay(header_text))
         
         if thumbnail_url:
-            self.current_container.add_item(Thumbnail(url=thumbnail_url))
+            self.current_container.add_item(Thumbnail(thumbnail_url))
             
         self.current_container.add_item(Separator())
 
