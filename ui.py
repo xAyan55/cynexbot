@@ -11,7 +11,7 @@ class BreezeContainerBuilder:
         self.containers = []
         self._new_container()
         
-        header_text = f"🍃 **Breeze** | **{title}**"
+        header_text = f"**{title}**"
         if description:
             header_text += f"\n{description}"
         self.current_container.add_item(TextDisplay(header_text))
@@ -69,18 +69,6 @@ class BreezeContainerBuilder:
                 self.current_container.children.pop()
         except Exception:
             pass
-
-        # Standard footer addition
-        if len(self.layout.children) < 5:
-            if len(self.current_container.children) <= 3:
-                self.current_container.add_item(Separator())
-                self.current_container.add_item(TextDisplay("🍃 *Breeze Bot — Premium Utilities & Security*"))
-            elif len(self.current_container.children) == 4:
-                self.current_container.add_item(TextDisplay("🍃 *Breeze Bot — Premium Utilities & Security*"))
-            else:
-                if len(self.layout.children) < 5:
-                    self._new_container()
-                    self.current_container.add_item(TextDisplay("🍃 *Breeze Bot — Premium Utilities & Security*"))
         
         # Validate using core discord components v2 validation rules
         from tickets import validate_v2_layout

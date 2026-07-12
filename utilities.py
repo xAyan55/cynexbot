@@ -1272,7 +1272,7 @@ class Utilities(commands.Cog):
         await log_command_usage("support", interaction)
         
         url = "https://discord.gg/breeze"
-        card = create_info_card("Breeze Help Desk Support", "Need help setting up systems or reporting bugs? Join our support server.", {})
+        card = create_info_card("Help Desk Support", "Need help setting up systems or reporting bugs? Join our support server.", {})
         btn = Button(label="Join Server", style=discord.ButtonStyle.link, url=url)
         card.add_item(ActionRow(btn))
         await interaction.followup.send(view=card, ephemeral=True)
@@ -1283,10 +1283,10 @@ class Utilities(commands.Cog):
         await log_command_usage("about", interaction)
         
         sections = {
-            "🍃 Overview": "Breeze is an enterprise-grade utility, ticket, suggestion, and review bot built entirely with Components V2.",
+            "Overview": "This is an enterprise-grade utility, ticket, suggestion, and review bot built entirely with Components V2.",
             "🛠️ System Architecture": "Python + discord.py 2.7.1 + aiosqlite (WAL connection enabled)"
         }
-        card = create_info_card("About Breeze Bot", "Our design philosophy and tech stack details.", sections)
+        card = create_info_card("About Bot", "Design philosophy and tech stack details.", sections)
         await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="vote", description="Vote link for the bot")
@@ -1295,7 +1295,7 @@ class Utilities(commands.Cog):
         await log_command_usage("vote", interaction)
         
         url = "https://top.gg/bot/breeze"
-        card = create_success_section("Vote for Breeze", "Support the development by voting for us!")
+        card = create_success_section("Vote", "Support the development by voting!")
         btn = Button(label="Vote", style=discord.ButtonStyle.link, url=url)
         card.add_item(ActionRow(btn))
         await interaction.followup.send(view=card, ephemeral=True)
