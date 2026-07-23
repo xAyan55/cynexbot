@@ -79,8 +79,8 @@ class BreezeContainerBuilder:
         # Clean up any trailing separators across all containers
         for container in self.containers:
             try:
-                while len(container.children) > 0 and isinstance(container.children[-1], Separator):
-                    container.children.pop()
+                while len(container._children) > 0 and isinstance(container._children[-1], Separator):
+                    container._children.pop()
             except Exception:
                 pass
         
