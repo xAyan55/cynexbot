@@ -618,7 +618,7 @@ async def render_v2_layout(user_id: str, components: List[dict], container_props
                 accessory = Thumbnail(acc_url)
             else:
                 # Section requires an accessory in discord.py. If none provided, we default to a transparent Thumbnail
-                accessory = Thumbnail("https://i.imgur.com/5z7P4Vq.png")
+                accessory = Thumbnail("https://upload.wikimedia.org/wikipedia/commons/c/c0/1x1.png")
                 
             children = []
             if title:

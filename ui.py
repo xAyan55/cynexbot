@@ -41,7 +41,7 @@ class BreezeContainerBuilder:
         """Adds a labeled native Section to the container."""
         self._ensure_space()
         if accessory is None:
-            accessory = Thumbnail("https://i.imgur.com/5z7P4Vq.png")
+            accessory = Thumbnail("https://upload.wikimedia.org/wikipedia/commons/c/c0/1x1.png")
         
         children = []
         if title:
