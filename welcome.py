@@ -350,18 +350,17 @@ class Welcome(commands.Cog):
         # Build V2 Welcome Layout View using BreezeContainerBuilder
         builder = BreezeContainerBuilder(
             title=f"Welcome to {member.guild.name}",
-            description="Fast. Reliable. Always Online.",
             accent_color=3447003,
             thumbnail_url=member.display_avatar.url if member.display_avatar else None
         )
-        builder.add_section("🌿 Greeting Section", translated_msg)
-        builder.add_section("👤 Member Information", f"You are member number **{member.guild.member_count}**.")
-        builder.add_section("🏠 Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
+        builder.add_section("Greeting Section", translated_msg)
+        builder.add_section("Member Information", f"You are member number **{member.guild.member_count}**.")
+        builder.add_section("Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
         
-        btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{member.id}")
-        btn_support = Button(label="🎫 Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{member.id}")
-        btn_web = Button(label="🌐 Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{member.id}")
-        btn_announce = Button(label="📢 Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{member.id}")
+        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{member.id}")
+        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{member.id}")
+        btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{member.id}")
+        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{member.id}")
         builder.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
         
         welcome_layout = builder.build()
@@ -518,18 +517,17 @@ class Welcome(commands.Cog):
         # Build V2 Welcome Layout View using BreezeContainerBuilder
         builder = BreezeContainerBuilder(
             title=f"Welcome to {interaction.guild.name}",
-            description="Fast. Reliable. Always Online.",
             accent_color=3447003,
             thumbnail_url=interaction.user.display_avatar.url if interaction.user.display_avatar else None
         )
-        builder.add_section("🌿 Greeting Section", translated_msg)
-        builder.add_section("👤 Member Information", f"You are member number **{interaction.guild.member_count}**.")
-        builder.add_section("🏠 Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
+        builder.add_section("Greeting Section", translated_msg)
+        builder.add_section("Member Information", f"You are member number **{interaction.guild.member_count}**.")
+        builder.add_section("Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
         
-        btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{interaction.user.id}")
-        btn_support = Button(label="🎫 Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{interaction.user.id}")
-        btn_web = Button(label="🌐 Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{interaction.user.id}")
-        btn_announce = Button(label="📢 Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{interaction.user.id}")
+        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{interaction.user.id}")
+        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{interaction.user.id}")
+        btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{interaction.user.id}")
+        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{interaction.user.id}")
         builder.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
         
         welcome_layout = builder.build()

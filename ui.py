@@ -91,19 +91,19 @@ class BreezeContainerBuilder:
 
 class BreezeSuccessContainer(BreezeContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
-        super().__init__(f"✅ {title}", description, accent_color=3066993) # Green
+        super().__init__(f"Success: {title}", description, accent_color=3066993) # Green
 
 class BreezeErrorContainer(BreezeContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
-        super().__init__(f"❌ {title}", description, accent_color=15158332) # Red
+        super().__init__(f"Error: {title}", description, accent_color=15158332) # Red
 
 class BreezeWarningContainer(BreezeContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
-        super().__init__(f"⚠️ {title}", description, accent_color=15844367) # Yellow/Orange
+        super().__init__(f"Warning: {title}", description, accent_color=15844367) # Yellow/Orange
 
 class BreezeInfoContainer(BreezeContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
-        super().__init__(f"ℹ️ {title}", description, accent_color=3447003) # Blue
+        super().__init__(f"Info: {title}", description, accent_color=3447003) # Blue
 
 class BreezePaginationContainer(LayoutView):
     """Component V2 pagination view displaying pages of content dynamically."""
@@ -134,18 +134,24 @@ class BreezePaginationContainer(LayoutView):
             accent_color=self.accent_color
         )
         
+        content_lines = []
         for sec_title, sec_desc in page_data.get("sections", []):
-            builder.add_section(sec_title, sec_desc)
-            builder.add_separator()
+            content_lines.append(f"**{sec_title}**\n{sec_desc}")
+            
+        combined_content = "\n\n".join(content_lines)
+        is_index = (self.current_page == 0)
+        section_name = "Categories" if is_index else "Commands"
+        builder.add_section(section_name, combined_content)
+        builder.add_separator()
             
         prev_btn = Button(
-            label="◀ Previous",
+            label="Previous",
             style=discord.ButtonStyle.secondary,
             custom_id="breeze:paginate:prev",
             disabled=(self.current_page == 0)
         )
         next_btn = Button(
-            label="Next ▶",
+            label="Next",
             style=discord.ButtonStyle.secondary,
             custom_id="breeze:paginate:next",
             disabled=(self.current_page == len(self.pages) - 1)
@@ -153,7 +159,7 @@ class BreezePaginationContainer(LayoutView):
         
         async def prev_callback(interaction: discord.Interaction):
             if interaction.user.id != self.user_id:
-                await interaction.response.send_message("❌ You are not authorized to paginate this view.", ephemeral=True)
+                await interaction.response.send_message("You are not authorized to paginate this view.", ephemeral=True)
                 return
             self.current_page -= 1
             self.update_layout()
@@ -161,7 +167,7 @@ class BreezePaginationContainer(LayoutView):
 
         async def next_callback(interaction: discord.Interaction):
             if interaction.user.id != self.user_id:
-                await interaction.response.send_message("❌ You are not authorized to paginate this view.", ephemeral=True)
+                await interaction.response.send_message("You are not authorized to paginate this view.", ephemeral=True)
                 return
             self.current_page += 1
             self.update_layout()

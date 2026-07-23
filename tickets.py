@@ -673,27 +673,27 @@ class OpenTicketModal(discord.ui.Modal):
                 thumbnail_url=user.display_avatar.url if user.display_avatar else None
             )
             
-            builder.add_section("📝 Subject & Description", f"**Subject:** {self.subject.value}\n**Description:** {self.description.value or 'No description provided.'}")
+            builder.add_section("Subject & Description", f"**Subject:** {self.subject.value}\n**Description:** {self.description.value or 'No description provided.'}")
             
             info_text = (
-                f"• **Created By:** {user.mention} (`{user.id}`)\n"
-                f"• **Category:** {self.category}\n"
-                f"• **Assigned Staff:** `Unassigned`\n"
-                f"• **Current Status:** `Open`"
+                f"• Created By: {user.mention} (`{user.id}`)\n"
+                f"• Category: {self.category}\n"
+                f"• Assigned Staff: `Unassigned`\n"
+                f"• Current Status: `Open`"
             )
-            builder.add_section("ℹ️ Ticket Information", info_text)
+            builder.add_section("Ticket Information", info_text)
             
             # Action Row containing Close, Claim, Transcript, Delete buttons
-            btn_close = Button(label="Close", style=discord.ButtonStyle.secondary, custom_id="breeze:close_ticket", emoji="🔒")
-            btn_claim = Button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="breeze:claim_ticket", emoji="👤")
-            btn_trans = Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket", emoji="📄")
-            btn_del = Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket", emoji="🗑")
+            btn_close = Button(label="Close", style=discord.ButtonStyle.secondary, custom_id="breeze:close_ticket")
+            btn_claim = Button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="breeze:claim_ticket")
+            btn_trans = Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket")
+            btn_del = Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket")
             builder.add_buttons(btn_close, btn_claim, btn_trans, btn_del)
             
             layout_view = builder.build()
             
             await channel.send(view=layout_view)
-            await interaction.followup.send(f"🎫 **Your ticket has been created!** {channel.mention}", ephemeral=True)
+            await interaction.followup.send(f"Your ticket has been created! {channel.mention}", ephemeral=True)
             
             # Log action
             await log_ticket_action(guild, "Ticket Open", f"Ticket {ticket_num} opened by {user.mention}.\n• Category: `{self.category}`\n• Subject: `{self.subject.value}`")

@@ -103,8 +103,8 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
     for idx, opt in enumerate(options):
         count = tally[idx]
         pct = (count / total_votes_cast * 100) if total_votes_cast > 0 else 0
-        bar = "🟩" * int(round(pct / 10)) + "⬛" * (10 - int(round(pct / 10)))
-        options_lines.append(f"**Option {idx+1}: {opt}**\n{bar} `{count} votes` ({pct:.1f}%)")
+        bar = "[" + "=" * int(round(pct / 10)) + " " * (10 - int(round(pct / 10))) + "]"
+        options_lines.append(f"**Option {idx+1}: {opt}**\n`{bar}` `{count} votes` ({pct:.1f}%)")
     options_text = "\n\n".join(options_lines)
     
     # Format winner / status
@@ -114,11 +114,11 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
         if max_votes > 0:
             winners = [options[i] for i, v in enumerate(tally) if v == max_votes]
             w_str = f"`{winners[0]}`" if len(winners) == 1 else ", ".join([f"`{w}`" for w in winners])
-            status_text = f"🏆 **Winner:** {w_str}\n🔒 *This poll is closed.*"
+            status_text = f"Winner: {w_str}\nThis poll is closed."
         else:
-            status_text = "🏆 **Winner:** No votes cast.\n🔒 *This poll is closed.*"
+            status_text = "Winner: No votes cast.\nThis poll is closed."
     elif status == "cancelled":
-        status_text = "❌ *This poll was cancelled.*"
+        status_text = "This poll was cancelled."
     else:
         settings_flags = []
         if anonymous:
@@ -129,9 +129,9 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
             settings_flags.append("Single Choice")
             
         status_text = (
-            f"⏳ <t:{end_time_epoch}:F> (<t:{end_time_epoch}:R>)\n"
-            f"⚙️ **Settings:** {', '.join(settings_flags)}\n"
-            f"👤 **Total Voters:** `{total_voters}`"
+            f"Time Limit: <t:{end_time_epoch}:F> (<t:{end_time_epoch}:R>)\n"
+            f"Settings: {', '.join(settings_flags)}\n"
+            f"Total Voters: `{total_voters}`"
         )
         if not anonymous and total_voters > 0:
             voter_lines = []
@@ -141,15 +141,15 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
             status_text += "\n" + "\n".join(voter_lines)
 
     builder = BreezeContainerBuilder(
-        title=f"📊 Poll: {question}",
+        title=f"Poll: {question}",
         description="Cast your vote using the buttons below.",
         accent_color=3447003
     )
     
-    builder.add_section("📈 Options Tally", options_text)
+    builder.add_section("Options Tally", options_text)
     
     if status_text:
-        builder.add_section("ℹ️ Status & Metadata", status_text)
+        builder.add_section("Status & Metadata", status_text)
         
     if status == "active":
         row_items = []
@@ -1053,15 +1053,15 @@ class Utilities(commands.Cog):
         pages = [
             # Index page (Welcome category overview)
             {
-                "title": "Breeze Help Center",
-                "description": "Welcome to Breeze.\nSelect a category below to explore commands.",
+                "title": "Help Center",
+                "description": "Welcome.\nSelect a category below to explore commands.",
                 "sections": [
-                    ("🌿 Welcome System", "Configure welcome messages, auto roles, greeting channels and previews."),
-                    ("🎫 Ticket System", "Professional ticket management with transcripts, claims and panels."),
-                    ("🛡️ Moderation", "Anti-swear, warnings, logging and moderation utilities."),
-                    ("💡 Suggestions System", "Enterprise-grade suggestions with moderator queues and approval loops."),
-                    ("⭐ Reviews System", "Service reviews module with moderation approval workflow."),
-                    ("⚙️ General Utilities", "Core utility commands and administrative options.")
+                    ("Welcome System", "Configure welcome messages, auto roles, greeting channels and previews."),
+                    ("Ticket System", "Professional ticket management with transcripts, claims and panels."),
+                    ("Moderation", "Anti-swear, warnings, logging and moderation utilities."),
+                    ("Suggestions System", "Enterprise-grade suggestions with moderator queues and approval loops."),
+                    ("Reviews System", "Service reviews module with moderation approval workflow."),
+                    ("General Utilities", "Core utility commands and administrative options.")
                 ]
             },
             # Page 1: Welcome System
@@ -1069,11 +1069,11 @@ class Utilities(commands.Cog):
                 "title": "Welcome System",
                 "description": "Configure welcome messages, auto roles, greeting channels and previews.",
                 "sections": [
-                    ("⚙️ Welcome Setup", "`/welcome setup [ch] [dm_enabled] [log_ch] [auto_role]`\nConfigure the welcome greeting and logging systems."),
-                    ("👁️ Preview Welcome", "`/welcome preview`\nPreview the welcome greeting banner layout."),
-                    ("📝 Edit Welcome Option", "`/welcome edit [option] [text]`\nUpdate greeting message text or rules guidelines text."),
-                    ("🏷️ Welcome Variables", "`/welcome variables`\nDisplay all supported placeholders available for welcome messages."),
-                    ("❌ Disable Welcome", "`/welcome disable`\nDisable the welcome greeting system on the guild.")
+                    ("Welcome Setup", "`/welcome setup [ch] [dm_enabled] [log_ch] [auto_role]`\nConfigure the welcome greeting and logging systems."),
+                    ("Preview Welcome", "`/welcome preview`\nPreview the welcome greeting banner layout."),
+                    ("Edit Welcome Option", "`/welcome edit [option] [text]`\nUpdate greeting message text or rules guidelines text."),
+                    ("Welcome Variables", "`/welcome variables`\nDisplay all supported placeholders available for welcome messages."),
+                    ("Disable Welcome", "`/welcome disable`\nDisable the welcome greeting system on the guild.")
                 ]
             },
             # Page 2: Ticket System
@@ -1081,15 +1081,15 @@ class Utilities(commands.Cog):
                 "title": "Ticket System",
                 "description": "Professional ticket management with transcripts, claims and panels.",
                 "sections": [
-                    ("⚙️ Ticket Setup", "`/ticket setup [role] [log_channel]`\nConfigure support staff role and logging channel."),
-                    ("🎫 Ticket Panel", "`/ticket panel [channel] [title] [description]`\nDeploy a persistent ticket panel with custom branding."),
-                    ("🔒 Ticket Control", "`/ticket close` / `/ticket reopen`\nClose or reopen an existing support ticket."),
-                    ("🗑️ Ticket Delete", "`/ticket delete`\nDelete the ticket channel (logs transcript if logging is configured)."),
-                    ("📌 Ticket Assignment", "`/ticket claim` / `/ticket unclaim`\nClaim or unclaim a ticket as a support staff member."),
-                    ("🏷️ Ticket Rename", "`/ticket rename [name]`\nRename the ticket channel safely."),
-                    ("👥 Ticket Members", "`/ticket add [member]` / `/ticket remove [member]`\nAdd or remove server members from a ticket channel."),
-                    ("📜 Ticket Transcript", "`/ticket transcript`\nManually generate and export an HTML transcript of messages."),
-                    ("📊 Ticket Stats", "`/ticket stats` / `/ticket list`\nView ticket stats and queue.")
+                    ("Ticket Setup", "`/ticket setup [role] [log_channel]`\nConfigure support staff role and logging channel."),
+                    ("Ticket Panel", "`/ticket panel [channel] [title] [description]`\nDeploy a persistent ticket panel with custom branding."),
+                    ("Ticket Control", "`/ticket close` / `/ticket reopen`\nClose or reopen an existing support ticket."),
+                    ("Ticket Delete", "`/ticket delete`\nDelete the ticket channel (logs transcript if logging is configured)."),
+                    ("Ticket Assignment", "`/ticket claim` / `/ticket unclaim`\nClaim or unclaim a ticket as a support staff member."),
+                    ("Ticket Rename", "`/ticket rename [name]`\nRename the ticket channel safely."),
+                    ("Ticket Members", "`/ticket add [member]` / `/ticket remove [member]`\nAdd or remove server members from a ticket channel."),
+                    ("Ticket Transcript", "`/ticket transcript`\nManually generate and export an HTML transcript of messages."),
+                    ("Ticket Stats", "`/ticket stats` / `/ticket list`\nView ticket stats and queue.")
                 ]
             },
             # Page 3: Suggestions System
@@ -1097,12 +1097,12 @@ class Utilities(commands.Cog):
                 "title": "Suggestions System",
                 "description": "Enterprise-grade suggestions with moderator queues and approval loops.",
                 "sections": [
-                    ("💡 Suggest Idea", "`/suggest [category] [anonymous]`\nSubmit an idea or feedback via interactive modal."),
-                    ("⚙️ Suggestion Setup", "`/suggestion setup [channel]`\nConfigure the suggestions target channel."),
-                    ("✅ Suggestion Approve", "`/suggestion approve [id] [reason]`\nApprove suggestion and open a discussion thread."),
-                    ("❌ Suggestion Deny", "`/suggestion deny [id] [reason]`\nDeny suggestion and notify the author."),
-                    ("🚀 Suggestion Implement", "`/suggestion implement [id] [notes]`\nMark suggestion as successfully implemented."),
-                    ("📊 Suggestion Stats", "`/suggestion stats`\nView suggestion approval and implementation rates.")
+                    ("Suggest Idea", "`/suggest [category] [anonymous]`\nSubmit an idea or feedback via interactive modal."),
+                    ("Suggestion Setup", "`/suggestion setup [channel]`\nConfigure the suggestions target channel."),
+                    ("Suggestion Approve", "`/suggestion approve [id] [reason]`\nApprove suggestion and open a discussion thread."),
+                    ("Suggestion Deny", "`/suggestion deny [id] [reason]`\nDeny suggestion and notify the author."),
+                    ("Suggestion Implement", "`/suggestion implement [id] [notes]`\nMark suggestion as successfully implemented."),
+                    ("Suggestion Stats", "`/suggestion stats`\nView suggestion approval and implementation rates.")
                 ]
             },
             # Page 4: Reviews System
@@ -1110,11 +1110,11 @@ class Utilities(commands.Cog):
                 "title": "Reviews System",
                 "description": "Service reviews module with moderation approval workflow.",
                 "sections": [
-                    ("⚙️ Review Setup", "`/review setup [review_ch] [mod_ch]`\nSetup reviews and moderation queue channels."),
-                    ("📝 Review Submit", "`/review submit`\nOpen interactive review submission modal."),
-                    ("📂 Review List", "`/review list`\nDisplay paginated lists of server reviews."),
-                    ("📊 Review Stats", "`/review stats`\nStar count breakdown and top reviewers leaderboard."),
-                    ("✅ Review Moderation", "`/review approve [id]` / `/review deny [id]`\nApprove or deny reviews in the staff channel.")
+                    ("Review Setup", "`/review setup [review_ch] [mod_ch]`\nSetup reviews and moderation queue channels."),
+                    ("Review Submit", "`/review submit`\nOpen interactive review submission modal."),
+                    ("Review List", "`/review list`\nDisplay paginated lists of server reviews."),
+                    ("Review Stats", "`/review stats`\nStar count breakdown and top reviewers leaderboard."),
+                    ("Review Moderation", "`/review approve [id]` / `/review deny [id]`\nApprove or deny reviews in the staff channel.")
                 ]
             },
             # Page 5: Moderation
@@ -1122,11 +1122,11 @@ class Utilities(commands.Cog):
                 "title": "Moderation",
                 "description": "Anti-swear, warnings, logging and moderation utilities.",
                 "sections": [
-                    ("🤬 Antiswear Control", "`/antiswear enable` / `/antiswear disable`\nEnable or disable anti-swear filters."),
-                    ("📝 Antiswear Words", "`/antiswear add [word]` / `/antiswear remove [word]`\nAdd or remove words from swear list."),
-                    ("📂 Antiswear Settings", "`/antiswear list` / `/antiswear regex [mode]`\nList swear words or toggle regex mode."),
-                    ("🛡️ Moderation Whitelist", "`/whitelist role [role]` / `/whitelist channel [channel]`\nBypass anti-swear for specific role/channel."),
-                    ("⚠️ Warnings Manager", "`/warnings check [member]` / `/warnings clear [member]`\nCheck or clear user warning records.")
+                    ("Antiswear Control", "`/antiswear enable` / `/antiswear disable`\nEnable or disable anti-swear filters."),
+                    ("Antiswear Words", "`/antiswear add [word]` / `/antiswear remove [word]`\nAdd or remove words from swear list."),
+                    ("Antiswear Settings", "`/antiswear list` / `/antiswear regex [mode]`\nList swear words or toggle regex mode."),
+                    ("Moderation Whitelist", "`/whitelist role [role]` / `/whitelist channel [channel]`\nBypass anti-swear for specific role/channel."),
+                    ("Warnings Manager", "`/warnings check [member]` / `/warnings clear [member]`\nCheck or clear user warning records.")
                 ]
             },
             # Page 6: General Utilities
@@ -1134,14 +1134,14 @@ class Utilities(commands.Cog):
                 "title": "General Utilities",
                 "description": "Core utility commands and administrative options.",
                 "sections": [
-                    ("🔒 Channel Lock & Unlock", "`/lock` / `/unlock`\nLock or unlock channel permissions for members."),
-                    ("⏱️ Slowmode & Purge", "`/slowmode [seconds]` / `/purge [limit]`\nSet slowmode delay or bulk delete messages."),
-                    ("📌 Sticky Messages", "`/sticky create [text]` / `/sticky delete`\nManage sticky messages in channels."),
-                    ("👤 Profile & Server", "`/userinfo` / `/serverinfo`\nDetailed visual stats overview cards."),
-                    ("💳 Hosting Plans", "`/plans`\nShow official BreezeBytes hosting and pricing plans."),
-                    ("🖼️ Avatar & Banner", "`/avatar` / `/banner`\nView member profile avatars and banners."),
-                    ("🏓 Bot Diagnostics", "`/ping` / `/botinfo` / `/uptime` / `/stats`\nCheck bot system stats and diagnostics."),
-                    ("⏰ Scheduler Reminders", "`/remind set` / `/remind list` / `/remind delete`\nSchedule, list, or delete reminders.")
+                    ("Channel Lock & Unlock", "`/lock` / `/unlock`\nLock or unlock channel permissions for members."),
+                    ("Slowmode & Purge", "`/slowmode [seconds]` / `/purge [limit]`\nSet slowmode delay or bulk delete messages."),
+                    ("Sticky Messages", "`/sticky create [text]` / `/sticky delete`\nManage sticky messages in channels."),
+                    ("Profile & Server", "`/userinfo` / `/serverinfo`\nDetailed visual stats overview cards."),
+                    ("Hosting Plans", "`/plans`\nShow official BreezeBytes hosting and pricing plans."),
+                    ("Avatar & Banner", "`/avatar` / `/banner`\nView member profile avatars and banners."),
+                    ("Bot Diagnostics", "`/ping` / `/botinfo` / `/uptime` / `/stats`\nCheck bot system stats and diagnostics."),
+                    ("Scheduler Reminders", "`/remind set` / `/remind list` / `/remind delete`\nSchedule, list, or delete reminders.")
                 ]
             }
         ]
@@ -1281,10 +1281,10 @@ class Utilities(commands.Cog):
         vote = "https://top.gg/bot/breeze"
         
         sections = {
-            "🌐 Web Portal": f"[Website]({website})",
-            "🎫 OAuth Invite": f"[Authorize Bot]({invite})",
-            "📢 Help Desk": f"[Support Server]({support})",
-            "⭐ Top.gg Portal": f"[Vote Bot]({vote})"
+            "Web Portal": f"[Website]({website})",
+            "OAuth Invite": f"[Authorize Bot]({invite})",
+            "Help Desk": f"[Support Server]({support})",
+            "Top.gg Portal": f"[Vote Bot]({vote})"
         }
         card = create_info_card("Breeze Directory Links", "Useful official references.", sections)
         await interaction.followup.send(view=card, ephemeral=True)
@@ -1296,7 +1296,7 @@ class Utilities(commands.Cog):
         
         # Build the premium single container layout as in the second screenshot
         builder = BreezeContainerBuilder(
-            title="⚡ BreezeBytes - Paid Hosting Plans",
+            title="BreezeBytes - Paid Hosting Plans",
             accent_color=3447003
         )
         
@@ -1304,25 +1304,25 @@ class Utilities(commands.Cog):
         mc_desc = (
             "Starting from only **₹80/m**\n"
             "High performance, uptime etc.\n\n"
-            "📥 **Visit The Plans:** [Click Here](https://breeze.dev)"
+            "**Visit The Plans:** [Click Here](https://breeze.dev)"
         )
-        builder.add_section("🧱 Minecraft Plans", mc_desc, accessory=Thumbnail("https://i.imgur.com/8N48x3W.png"))
+        builder.add_section("Minecraft Plans", mc_desc, accessory=Thumbnail("https://i.imgur.com/8N48x3W.png"))
         
         # VPS Section
         vps_desc = (
             "Starting from only **₹120/m**\n"
             "High performance, uptime etc.\n\n"
-            "📥 **Visit The Plans:** [Click Here](https://breeze.dev)"
+            "**Visit The Plans:** [Click Here](https://breeze.dev)"
         )
-        builder.add_section("🔮 VPS Plans", vps_desc, accessory=Thumbnail("https://i.imgur.com/kP859e8.png"))
+        builder.add_section("VPS Plans", vps_desc, accessory=Thumbnail("https://i.imgur.com/kP859e8.png"))
         
         # Bot Section
         bot_desc = (
             "Starting from only **₹20/m**\n"
             "High performance, uptime etc.\n\n"
-            "📥 **Visit The Plans:** [Click Here](https://breeze.dev)"
+            "**Visit The Plans:** [Click Here](https://breeze.dev)"
         )
-        builder.add_section("⚙️ Bot Plans", bot_desc, accessory=Thumbnail("https://i.imgur.com/7b58w3H.png"))
+        builder.add_section("Bot Plans", bot_desc, accessory=Thumbnail("https://i.imgur.com/7b58w3H.png"))
         
         # Action Row Buttons
         btn_mc = Button(label="MC-Plans", style=discord.ButtonStyle.link, url="https://breeze.dev/minecraft")

@@ -336,15 +336,13 @@ class Leveling(commands.Cog):
         xp_needed = 5 * level**2 + 50 * level + 100
 
         builder = BreezeContainerBuilder(
-            title="⭐ Rank Details",
+            title="Rank Details",
             description=f"Leveling statistics for {target.mention}",
             accent_color=3447003,
             thumbnail_url=target.display_avatar.url if target.display_avatar else None
         )
         builder.add_section("Level Status", f"Level **{level}**")
-        builder.add_separator()
         builder.add_section("XP Progress", f"**{xp} / {xp_needed} XP**")
-        builder.add_separator()
         builder.add_section("Total Messages", f"**{total_messages}** messages")
 
         await interaction.followup.send(view=builder.build(), ephemeral=True)
@@ -391,7 +389,7 @@ class Leveling(commands.Cog):
         leaderboard_text = "\n".join(leaderboard_lines)
 
         builder = BreezeContainerBuilder(
-            title="🏆 Server Leaderboard",
+            title="Server Leaderboard",
             description=f"Top 10 highest-level users in **{interaction.guild.name}**",
             accent_color=3447003
         )
