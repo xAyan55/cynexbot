@@ -617,8 +617,8 @@ async def render_v2_layout(user_id: str, components: List[dict], container_props
             elif acc_type == 'thumbnail' and acc_url:
                 accessory = Thumbnail(acc_url)
             else:
-                # Section requires an accessory in discord.py. If none provided, we default to a dummy disabled button
-                accessory = Button(label=" ", style=discord.ButtonStyle.secondary, disabled=True, custom_id=f"published_sec_dummy_{idx}")
+                # Section requires an accessory in discord.py. If none provided, we default to a transparent Thumbnail
+                accessory = Thumbnail("https://i.imgur.com/5z7P4Vq.png")
                 
             children = []
             if title:

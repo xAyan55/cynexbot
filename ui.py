@@ -41,9 +41,7 @@ class BreezeContainerBuilder:
         """Adds a labeled native Section to the container."""
         self._ensure_space()
         if accessory is None:
-            import random
-            dummy_id = f"breeze:dummy_sec:{random.randint(100000, 999999)}"
-            accessory = Button(label=" ", style=discord.ButtonStyle.secondary, disabled=True, custom_id=dummy_id)
+            accessory = Thumbnail("https://i.imgur.com/5z7P4Vq.png")
         
         children = []
         if title:
