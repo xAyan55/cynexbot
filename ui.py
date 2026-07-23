@@ -5,7 +5,7 @@ from typing import Optional, List
 
 class BreezeContainerBuilder:
     """Universal Breeze UI Builder using Components V2 Layouts with auto-splitting."""
-    def __init__(self, title: str, description: Optional[str] = None, accent_color: int = 3447003, thumbnail_url: Optional[str] = None):
+    def __init__(self, title: str, description: Optional[str] = None, accent_color: Optional[int] = None, thumbnail_url: Optional[str] = None):
         self.layout = LayoutView()
         self.accent_color = accent_color
         self.containers = []
@@ -91,23 +91,23 @@ class BreezeContainerBuilder:
 
 class BreezeSuccessContainer(BreezeContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
-        super().__init__(f"Success: {title}", description, accent_color=3066993) # Green
+        super().__init__(f"Success: {title}", description, accent_color=None)
 
 class BreezeErrorContainer(BreezeContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
-        super().__init__(f"Error: {title}", description, accent_color=15158332) # Red
+        super().__init__(f"Error: {title}", description, accent_color=None)
 
 class BreezeWarningContainer(BreezeContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
-        super().__init__(f"Warning: {title}", description, accent_color=15844367) # Yellow/Orange
+        super().__init__(f"Warning: {title}", description, accent_color=None)
 
 class BreezeInfoContainer(BreezeContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
-        super().__init__(f"Info: {title}", description, accent_color=3447003) # Blue
+        super().__init__(f"Info: {title}", description, accent_color=None)
 
 class BreezePaginationContainer(LayoutView):
     """Component V2 pagination view displaying pages of content dynamically."""
-    def __init__(self, title: str, pages: List[dict], user_id: int, accent_color: int = 3447003):
+    def __init__(self, title: str, pages: List[dict], user_id: int, accent_color: Optional[int] = None):
         super().__init__(timeout=180)
         self.title = title
         self.pages = pages
