@@ -22,7 +22,9 @@ class BreezeContainerBuilder:
         self.current_container.add_item(Separator())
 
     def _new_container(self):
-        container = Container(accent_color=self.accent_color)
+        # Only the root container has self.accent_color. Subsequent containers have None.
+        color = self.accent_color if not self.containers else None
+        container = Container(accent_color=color)
         self.layout.add_item(container)
         self.containers.append(container)
         self.current_container = container
@@ -38,10 +40,20 @@ class BreezeContainerBuilder:
     def add_section(self, title: str, content: str, accessory = None):
         """Adds a labeled native Section to the container."""
         self._ensure_space()
-        if accessory is not None:
-            self.current_container.add_item(Section(title, content, accessory=accessory))
-        else:
-            self.current_container.add_item(TextDisplay(f"**{title}**\n{content}"))
+        if accessory is None:
+            import random
+            dummy_id = f"breeze:dummy_sec:{random.randint(100000, 999999)}"
+            accessory = Button(label=" ", style=discord.ButtonStyle.secondary, disabled=True, custom_id=dummy_id)
+        
+        children = []
+        if title:
+            children.append(title)
+        if content:
+            children.append(content)
+        if not children:
+            children.append("\u200b")
+            
+        self.current_container.add_item(Section(*children, accessory=accessory))
         return self
 
     def add_text(self, text: str):
@@ -51,9 +63,12 @@ class BreezeContainerBuilder:
         return self
 
     def add_separator(self):
-        """Adds a separator line."""
+        """Adds a separator line cleanly (avoiding duplicates or trailing before buttons)."""
         self._ensure_space()
-        self.current_container.add_item(Separator())
+        if len(self.current_container.children) > 0:
+            last = self.current_container.children[-1]
+            if not isinstance(last, Separator) and not isinstance(last, ActionRow):
+                self.current_container.add_item(Separator())
         return self
 
     def add_buttons(self, *buttons: Button):
@@ -63,12 +78,13 @@ class BreezeContainerBuilder:
         return self
 
     def build(self) -> LayoutView:
-        # If the last item is a separator, pop it for a cleaner look
-        try:
-            if len(self.current_container.children) > 0 and isinstance(self.current_container.children[-1], Separator):
-                self.current_container.children.pop()
-        except Exception:
-            pass
+        # Clean up any trailing separators across all containers
+        for container in self.containers:
+            try:
+                while len(container.children) > 0 and isinstance(container.children[-1], Separator):
+                    container.children.pop()
+            except Exception:
+                pass
         
         # Validate using core discord components v2 validation rules
         from tickets import validate_v2_layout

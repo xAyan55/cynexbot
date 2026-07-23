@@ -98,62 +98,28 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
                 
     total_votes_cast = sum(tally)
     
-    layout = discord.ui.LayoutView()
+    # Format options text
+    options_lines = []
+    for idx, opt in enumerate(options):
+        count = tally[idx]
+        pct = (count / total_votes_cast * 100) if total_votes_cast > 0 else 0
+        bar = "🟩" * int(round(pct / 10)) + "⬛" * (10 - int(round(pct / 10)))
+        options_lines.append(f"**Option {idx+1}: {opt}**\n{bar} `{count} votes` ({pct:.1f}%)")
+    options_text = "\n\n".join(options_lines)
     
-    # Container 1: Question and Options 1 & 2
-    container1 = discord.ui.Container(accent_color=3447003)
-    container1.add_item(discord.ui.TextDisplay(f"📊 **{question}**"))
-    container1.add_item(discord.ui.Separator())
-    
-    count0 = tally[0]
-    pct0 = (count0 / total_votes_cast * 100) if total_votes_cast > 0 else 0
-    bar0 = "🟩" * int(round(pct0 / 10)) + "⬛" * (10 - int(round(pct0 / 10)))
-    container1.add_item(discord.ui.TextDisplay(f"**Option 1: {options[0]}**\n{bar0} `{count0} votes` ({pct0:.1f}%)"))
-    container1.add_item(discord.ui.Separator())
-    
-    count1 = tally[1]
-    pct1 = (count1 / total_votes_cast * 100) if total_votes_cast > 0 else 0
-    bar1 = "🟩" * int(round(pct1 / 10)) + "⬛" * (10 - int(round(pct1 / 10)))
-    container1.add_item(discord.ui.TextDisplay(f"**Option 2: {options[1]}**\n{bar1} `{count1} votes` ({pct1:.1f}%)"))
-    
-    layout.add_item(container1)
-    
-    # Container 2: Options 3 & 4 (if any)
-    if len(options) > 2:
-        container2 = discord.ui.Container(accent_color=3447003)
-        count2 = tally[2]
-        pct2 = (count2 / total_votes_cast * 100) if total_votes_cast > 0 else 0
-        bar2 = "🟩" * int(round(pct2 / 10)) + "⬛" * (10 - int(round(pct2 / 10)))
-        container2.add_item(discord.ui.TextDisplay(f"**Option 3: {options[2]}**\n{bar2} `{count2} votes` ({pct2:.1f}%)"))
-        
-        if len(options) > 3:
-            container2.add_item(discord.ui.Separator())
-            count3 = tally[3]
-            pct3 = (count3 / total_votes_cast * 100) if total_votes_cast > 0 else 0
-            bar3 = "🟩" * int(round(pct3 / 10)) + "⬛" * (10 - int(round(pct3 / 10)))
-            container2.add_item(discord.ui.TextDisplay(f"**Option 4: {options[3]}**\n{bar3} `{count3} votes` ({pct3:.1f}%)"))
-            
-        layout.add_item(container2)
-        
-    # Container 3: Stats / Status / Results
-    container_stats = discord.ui.Container(accent_color=3447003)
+    # Format winner / status
+    status_text = ""
     if status == "closed":
         max_votes = max(tally) if tally else 0
         if max_votes > 0:
             winners = [options[i] for i, v in enumerate(tally) if v == max_votes]
             w_str = f"`{winners[0]}`" if len(winners) == 1 else ", ".join([f"`{w}`" for w in winners])
-            container_stats.add_item(discord.ui.TextDisplay(f"**🏆 Results Winner**\n{w_str}"))
+            status_text = f"🏆 **Winner:** {w_str}\n🔒 *This poll is closed.*"
         else:
-            container_stats.add_item(discord.ui.TextDisplay("**🏆 Results Winner**\nNo votes were cast."))
-            
-        container_stats.add_item(discord.ui.Separator())
-        container_stats.add_item(discord.ui.TextDisplay("**Status**\n🔒 *This poll is closed.*"))
-        layout.add_item(container_stats)
+            status_text = "🏆 **Winner:** No votes cast.\n🔒 *This poll is closed.*"
     elif status == "cancelled":
-        container_stats.add_item(discord.ui.TextDisplay("**Status**\n❌ *This poll was cancelled.*"))
-        layout.add_item(container_stats)
+        status_text = "❌ *This poll was cancelled.*"
     else:
-        # Active metadata
         settings_flags = []
         if anonymous:
             settings_flags.append("Anonymous")
@@ -162,35 +128,37 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
         if not settings_flags:
             settings_flags.append("Single Choice")
             
-        metadata_text = f"⏳ <t:{end_time_epoch}:F> (<t:{end_time_epoch}:R>)\n⚙️ **Settings:** {', '.join(settings_flags)}"
-        container_stats.add_item(discord.ui.TextDisplay(f"**ℹ️ Poll Metadata**\n{metadata_text}"))
-        container_stats.add_item(discord.ui.Separator())
-        
-        voter_text = f"👤 **Total Voters:** `{total_voters}`"
+        status_text = (
+            f"⏳ <t:{end_time_epoch}:F> (<t:{end_time_epoch}:R>)\n"
+            f"⚙️ **Settings:** {', '.join(settings_flags)}\n"
+            f"👤 **Total Voters:** `{total_voters}`"
+        )
         if not anonymous and total_voters > 0:
             voter_lines = []
             for voter_id, choices in list(votes.items())[-5:]:
                 choices_str = ", ".join([f"`{options[c]}`" for c in choices if 0 <= c < len(options)])
                 voter_lines.append(f"<@{voter_id}> voted for {choices_str}")
-            voter_text += "\n" + "\n".join(voter_lines)
-            
-        container_stats.add_item(discord.ui.TextDisplay(f"**👥 Voter Activity**\n{voter_text}"))
-        layout.add_item(container_stats)
+            status_text += "\n" + "\n".join(voter_lines)
+
+    builder = BreezeContainerBuilder(
+        title=f"📊 Poll: {question}",
+        description="Cast your vote using the buttons below.",
+        accent_color=3447003
+    )
+    
+    builder.add_section("📈 Options Tally", options_text)
+    
+    if status_text:
+        builder.add_section("ℹ️ Status & Metadata", status_text)
         
-    # Container 4: Action Row for buttons
     if status == "active":
-        container_btn = discord.ui.Container(accent_color=3447003)
         row_items = []
         for idx, opt in enumerate(options):
             row_items.append(discord.ui.Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"breeze:poll:vote:{idx}"))
         row_items.append(discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel"))
-        container_btn.add_item(discord.ui.ActionRow(*row_items))
-        layout.add_item(container_btn)
+        builder.add_buttons(*row_items)
         
-    # Validate layout constraints
-    from tickets import validate_v2_layout
-    validate_v2_layout(layout)
-    return layout
+    return builder.build()
 
 
 async def handle_poll_vote_interaction(interaction: discord.Interaction, option_idx: int):
@@ -1170,6 +1138,7 @@ class Utilities(commands.Cog):
                     ("⏱️ Slowmode & Purge", "`/slowmode [seconds]` / `/purge [limit]`\nSet slowmode delay or bulk delete messages."),
                     ("📌 Sticky Messages", "`/sticky create [text]` / `/sticky delete`\nManage sticky messages in channels."),
                     ("👤 Profile & Server", "`/userinfo` / `/serverinfo`\nDetailed visual stats overview cards."),
+                    ("💳 Hosting Plans", "`/plans`\nShow official BreezeBytes hosting and pricing plans."),
                     ("🖼️ Avatar & Banner", "`/avatar` / `/banner`\nView member profile avatars and banners."),
                     ("🏓 Bot Diagnostics", "`/ping` / `/botinfo` / `/uptime` / `/stats`\nCheck bot system stats and diagnostics."),
                     ("⏰ Scheduler Reminders", "`/remind set` / `/remind list` / `/remind delete`\nSchedule, list, or delete reminders.")
@@ -1319,6 +1288,49 @@ class Utilities(commands.Cog):
         }
         card = create_info_card("Breeze Directory Links", "Useful official references.", sections)
         await interaction.followup.send(view=card, ephemeral=True)
+
+    @app_commands.command(name="plans", description="Show official BreezeBytes hosting and pricing plans")
+    async def plans(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        await log_command_usage("plans", interaction)
+        
+        # Build the premium single container layout as in the second screenshot
+        builder = BreezeContainerBuilder(
+            title="⚡ BreezeBytes - Paid Hosting Plans",
+            accent_color=3447003
+        )
+        
+        # Minecraft Section
+        mc_desc = (
+            "Starting from only **₹80/m**\n"
+            "High performance, uptime etc.\n\n"
+            "📥 **Visit The Plans:** [Click Here](https://breeze.dev)"
+        )
+        builder.add_section("🧱 Minecraft Plans", mc_desc, accessory=Thumbnail("https://i.imgur.com/8N48x3W.png"))
+        
+        # VPS Section
+        vps_desc = (
+            "Starting from only **₹120/m**\n"
+            "High performance, uptime etc.\n\n"
+            "📥 **Visit The Plans:** [Click Here](https://breeze.dev)"
+        )
+        builder.add_section("🔮 VPS Plans", vps_desc, accessory=Thumbnail("https://i.imgur.com/kP859e8.png"))
+        
+        # Bot Section
+        bot_desc = (
+            "Starting from only **₹20/m**\n"
+            "High performance, uptime etc.\n\n"
+            "📥 **Visit The Plans:** [Click Here](https://breeze.dev)"
+        )
+        builder.add_section("⚙️ Bot Plans", bot_desc, accessory=Thumbnail("https://i.imgur.com/7b58w3H.png"))
+        
+        # Action Row Buttons
+        btn_mc = Button(label="MC-Plans", style=discord.ButtonStyle.link, url="https://breeze.dev/minecraft")
+        btn_vps = Button(label="VPS Plans", style=discord.ButtonStyle.link, url="https://breeze.dev/vps")
+        btn_bot = Button(label="Bot Plans", style=discord.ButtonStyle.link, url="https://breeze.dev/bot")
+        builder.add_buttons(btn_mc, btn_vps, btn_bot)
+        
+        await interaction.followup.send(view=builder.build(), ephemeral=True)
 
     @app_commands.command(name="report", description="Submit an issue report to server moderators")
     @app_commands.describe(issue="Description of the bug/incident to report")

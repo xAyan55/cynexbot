@@ -663,42 +663,34 @@ class OpenTicketModal(discord.ui.Modal):
             # Save Ticket Metadata
             await save_ticket(ticket_num, guild_id, str(channel.id), user_id, self.category, self.subject.value)
             
-            # Render V2 greeting welcome components
+            # Render V2 greeting welcome components using BreezeContainerBuilder
             accent_color_int = parse_color(self.panel_data.get('accent_color', '')) or 3447003 # Blurple
             
-            # Container 1: Info Header & Subject
-            container1 = Container(accent_color=accent_color_int)
-            container1.add_item(TextDisplay(f"🎫 **Ticket {ticket_num}**\nHello {user.mention}, thank you for opening a support ticket!"))
-            container1.add_item(Separator())
-            container1.add_item(TextDisplay(f"📝 **Subject & Description**\n**Subject:** {self.subject.value}\n**Description:** {self.description.value or 'No description provided.'}"))
-            container1.add_item(Separator())
-
-            # Container 2: Ticket Status
-            container2 = Container(accent_color=accent_color_int)
-            container2.add_item(TextDisplay(f"👤 **Created By**\n{user.mention} (`{user.id}`)"))
-            container2.add_item(Separator())
-            container2.add_item(TextDisplay(f"📂 **Category**\n{self.category}"))
-            container2.add_item(Separator())
-            container2.add_item(TextDisplay(f"👥 **Assigned Staff**\n`Unassigned`"))
-
-            # Container 3: Status & Controls
-            container3 = Container(accent_color=accent_color_int)
-            container3.add_item(TextDisplay(f"ℹ️ **Current Status**\n`Open`"))
-            container3.add_item(Separator())
+            builder = BreezeContainerBuilder(
+                title=f"Ticket {ticket_num}",
+                description=f"Hello {user.mention}, thank you for opening a support ticket!",
+                accent_color=accent_color_int,
+                thumbnail_url=user.display_avatar.url if user.display_avatar else None
+            )
+            
+            builder.add_section("📝 Subject & Description", f"**Subject:** {self.subject.value}\n**Description:** {self.description.value or 'No description provided.'}")
+            
+            info_text = (
+                f"• **Created By:** {user.mention} (`{user.id}`)\n"
+                f"• **Category:** {self.category}\n"
+                f"• **Assigned Staff:** `Unassigned`\n"
+                f"• **Current Status:** `Open`"
+            )
+            builder.add_section("ℹ️ Ticket Information", info_text)
             
             # Action Row containing Close, Claim, Transcript, Delete buttons
-            welcome_row = ActionRow(
-                Button(label="Close", style=discord.ButtonStyle.secondary, custom_id="breeze:close_ticket", emoji="🔒"),
-                Button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="breeze:claim_ticket", emoji="👤"),
-                Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket", emoji="📄"),
-                Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket", emoji="🗑")
-            )
-            container3.add_item(welcome_row)
+            btn_close = Button(label="Close", style=discord.ButtonStyle.secondary, custom_id="breeze:close_ticket", emoji="🔒")
+            btn_claim = Button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="breeze:claim_ticket", emoji="👤")
+            btn_trans = Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket", emoji="📄")
+            btn_del = Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket", emoji="🗑")
+            builder.add_buttons(btn_close, btn_claim, btn_trans, btn_del)
             
-            layout_view = LayoutView()
-            layout_view.add_item(container1)
-            layout_view.add_item(container2)
-            layout_view.add_item(container3)
+            layout_view = builder.build()
             
             await channel.send(view=layout_view)
             await interaction.followup.send(f"🎫 **Your ticket has been created!** {channel.mention}", ephemeral=True)
@@ -1305,7 +1297,7 @@ class PublishPanelButton(discord.ui.Button):
             root = Container(accent_color=accent_int)
             
             # Text display title & description
-            root.add_item(TextDisplay(f"# {self.builder_view.config['title']}\n{self.builder_view.config['description']}"))
+            root.add_item(TextDisplay(f"**{self.builder_view.config['title']}**\n{self.builder_view.config['description']}"))
             root.add_item(Separator())
             
             if self.builder_view.config['thumbnail_url']:

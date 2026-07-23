@@ -347,30 +347,24 @@ class Welcome(commands.Cog):
         welcome_txt = settings["welcome_message"] or default_welcome
         translated_msg = await translate_welcome_variables(welcome_txt, member)
 
-        # Build V2 Welcome Layout View manually
-        container1 = Container(accent_color=3447003)
-        container1.add_item(TextDisplay(f"👋 **Welcome to {member.guild.name}!**"))
-        container1.add_item(Separator())
-        container1.add_item(TextDisplay(f"🌿 **Greeting Section**\n{translated_msg}"))
-        container1.add_item(Separator())
-        container1.add_item(TextDisplay(f"👤 **Member Information**\nYou are member number **{member.guild.member_count}**."))
-        
-        container2 = Container(accent_color=3447003)
-        container2.add_item(TextDisplay(f"🏠 **Server Information**\nPlease click the **Rules** button below or check the server rules channels to ensure guidelines are followed."))
-        container2.add_item(Separator())
+        # Build V2 Welcome Layout View using BreezeContainerBuilder
+        builder = BreezeContainerBuilder(
+            title=f"Welcome to {member.guild.name}",
+            description="Fast. Reliable. Always Online.",
+            accent_color=3447003,
+            thumbnail_url=member.display_avatar.url if member.display_avatar else None
+        )
+        builder.add_section("🌿 Greeting Section", translated_msg)
+        builder.add_section("👤 Member Information", f"You are member number **{member.guild.member_count}**.")
+        builder.add_section("🏠 Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
         
         btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{member.id}")
         btn_support = Button(label="🎫 Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{member.id}")
         btn_web = Button(label="🌐 Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{member.id}")
         btn_announce = Button(label="📢 Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{member.id}")
-        container2.add_item(ActionRow(btn_rules, btn_support, btn_web, btn_announce))
+        builder.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
         
-        welcome_layout = LayoutView()
-        welcome_layout.add_item(container1)
-        welcome_layout.add_item(container2)
-        
-        from tickets import validate_v2_layout
-        validate_v2_layout(welcome_layout)
+        welcome_layout = builder.build()
 
         # 7. Post Welcome Message
         if settings["channel_id"]:
@@ -521,30 +515,24 @@ class Welcome(commands.Cog):
         welcome_txt = settings["welcome_message"] or default_welcome
         translated_msg = await translate_welcome_variables(welcome_txt, interaction.user)
 
-        # Build V2 Welcome Layout View manually
-        container1 = Container(accent_color=3447003)
-        container1.add_item(TextDisplay(f"👋 **Welcome to {interaction.guild.name}!**"))
-        container1.add_item(Separator())
-        container1.add_item(TextDisplay(f"🌿 **Greeting Section**\n{translated_msg}"))
-        container1.add_item(Separator())
-        container1.add_item(TextDisplay(f"👤 **Member Information**\nYou are member number **{interaction.guild.member_count}**."))
-        
-        container2 = Container(accent_color=3447003)
-        container2.add_item(TextDisplay(f"🏠 **Server Information**\nPlease click the **Rules** button below or check the server rules channels to ensure guidelines are followed."))
-        container2.add_item(Separator())
+        # Build V2 Welcome Layout View using BreezeContainerBuilder
+        builder = BreezeContainerBuilder(
+            title=f"Welcome to {interaction.guild.name}",
+            description="Fast. Reliable. Always Online.",
+            accent_color=3447003,
+            thumbnail_url=interaction.user.display_avatar.url if interaction.user.display_avatar else None
+        )
+        builder.add_section("🌿 Greeting Section", translated_msg)
+        builder.add_section("👤 Member Information", f"You are member number **{interaction.guild.member_count}**.")
+        builder.add_section("🏠 Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
         
         btn_rules = Button(label="📜 Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{interaction.user.id}")
         btn_support = Button(label="🎫 Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{interaction.user.id}")
         btn_web = Button(label="🌐 Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{interaction.user.id}")
         btn_announce = Button(label="📢 Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{interaction.user.id}")
-        container2.add_item(ActionRow(btn_rules, btn_support, btn_web, btn_announce))
+        builder.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
         
-        welcome_layout = LayoutView()
-        welcome_layout.add_item(container1)
-        welcome_layout.add_item(container2)
-        
-        from tickets import validate_v2_layout
-        validate_v2_layout(welcome_layout)
+        welcome_layout = builder.build()
 
         await interaction.followup.send(view=welcome_layout, ephemeral=True)
 
