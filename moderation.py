@@ -1,4 +1,4 @@
-import re
+﻿import re
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
@@ -9,14 +9,14 @@ from discord import app_commands
 from discord.ext import commands
 
 from ui import (
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeWarningContainer,
-    BreezeInfoContainer
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTWarningContainer,
+    KINETICHOSTInfoContainer
 )
 
-logger = logging.getLogger("Breeze.AntiSwear")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.AntiSwear")
+DB_PATH = "kinetichost.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # DATABASE UTILITIES & CACHING FOR ANTI-SWEAR
@@ -122,7 +122,7 @@ class Moderation(commands.Cog):
     async def log_moderation(self, guild: discord.Guild, user: discord.Member, action: str, details: str):
         log_ch = await get_log_channel(guild)
         if log_ch:
-            card = BreezeWarningContainer("🛡️ Breeze Moderation Alert", f"Action taken by system against target user.")
+            card = KINETICHOSTWarningContainer("🛡️ KINETICHOST Moderation Alert", f"Action taken by system against target user.")
             card.add_section("User Affected", f"{user.mention} (`{user.id}`)")
             card.add_section("Action Executed", action)
             card.add_section("Reason / Details", details)
@@ -138,9 +138,9 @@ class Moderation(commands.Cog):
         if not guild:
             return "This command can only be used inside servers."
         if not guild.me.guild_permissions.moderate_members:
-            return "❌ Breeze requires **Timeout Members (Moderate Members)** permission to function fully."
+            return "❌ KINETICHOST requires **Timeout Members (Moderate Members)** permission to function fully."
         if not guild.me.guild_permissions.manage_messages:
-            return "❌ Breeze requires **Manage Messages** permission to delete flagged contents."
+            return "❌ KINETICHOST requires **Manage Messages** permission to delete flagged contents."
         return None
 
     # Swear Detection Hook
@@ -242,11 +242,11 @@ class Moderation(commands.Cog):
                             await db.commit()
 
                         # Apply timeout
-                        await message.author.timeout(timedelta(seconds=timeout_dur), reason=f"Breeze Anti-Swear warning limit exceeded ({warnings}/{max_warnings})")
+                        await message.author.timeout(timedelta(seconds=timeout_dur), reason=f"KINETICHOST Anti-Swear warning limit exceeded ({warnings}/{max_warnings})")
                         
                         # Ephemeral alert
                         try:
-                            alert = BreezeWarningContainer(
+                            alert = KINETICHOSTWarningContainer(
                                 "User Muted / Timed Out",
                                 f"{message.author.mention} was timed out for **{timeout_dur // 60} minutes** for exceeding the bad language warning limit."
                             )
@@ -267,7 +267,7 @@ class Moderation(commands.Cog):
             else:
                 # Warn user
                 try:
-                    warn = BreezeWarningContainer(
+                    warn = KINETICHOSTWarningContainer(
                         "Language Warning",
                         f"{message.author.mention}, please watch your language! Swearing is not allowed here.\n*Warning **{warnings}** of **{max_warnings}***"
                     )
@@ -288,14 +288,14 @@ class Moderation(commands.Cog):
     # SLASH COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    antiswear = app_commands.Group(name="antiswear", description="Breeze server anti-swear moderation settings", default_permissions=discord.Permissions(administrator=True))
+    antiswear = app_commands.Group(name="antiswear", description="KINETICHOST server anti-swear moderation settings", default_permissions=discord.Permissions(administrator=True))
 
     @antiswear.command(name="enable", description="Enable anti-swear word filtering on the server")
     async def antiswear_enable(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         err = self.check_bot_moderation_permissions(interaction)
         if err:
-            card = BreezeErrorContainer("Missing Bot Permissions", err)
+            card = KINETICHOSTErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -308,7 +308,7 @@ class Moderation(commands.Cog):
             await db.commit()
         cache.invalidate(guild_id)
 
-        card = BreezeSuccessContainer("System Enabled", "✅ Anti-Swear filtering has been successfully **enabled**.")
+        card = KINETICHOSTSuccessContainer("System Enabled", "✅ Anti-Swear filtering has been successfully **enabled**.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @antiswear.command(name="disable", description="Disable anti-swear word filtering on the server")
@@ -323,7 +323,7 @@ class Moderation(commands.Cog):
             await db.commit()
         cache.invalidate(guild_id)
 
-        card = BreezeSuccessContainer("System Disabled", "⚠️ Anti-Swear filtering has been **disabled**.")
+        card = KINETICHOSTSuccessContainer("System Disabled", "⚠️ Anti-Swear filtering has been **disabled**.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @antiswear.command(name="add", description="Add a word to the server's anti-swear filter")
@@ -332,7 +332,7 @@ class Moderation(commands.Cog):
         guild_id = str(interaction.guild_id)
         word_clean = word.strip()
         if not word_clean:
-            card = BreezeErrorContainer("Invalid Word", "The provided word cannot be blank.")
+            card = KINETICHOSTErrorContainer("Invalid Word", "The provided word cannot be blank.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -341,7 +341,7 @@ class Moderation(commands.Cog):
             await db.commit()
         cache.invalidate(guild_id)
 
-        card = BreezeSuccessContainer("Word Added", f"Added `{word_clean}` to the blocked words list.")
+        card = KINETICHOSTSuccessContainer("Word Added", f"Added `{word_clean}` to the blocked words list.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @antiswear.command(name="remove", description="Remove a word from the server's anti-swear filter")
@@ -353,7 +353,7 @@ class Moderation(commands.Cog):
             await db.commit()
         cache.invalidate(guild_id)
 
-        card = BreezeSuccessContainer("Word Removed", f"Removed `{word}` from the blocked words list.")
+        card = KINETICHOSTSuccessContainer("Word Removed", f"Removed `{word}` from the blocked words list.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @antiswear.command(name="list", description="Show all configured blocked words")
@@ -372,7 +372,7 @@ class Moderation(commands.Cog):
         else:
             desc += "*No words are currently added to the filter.*"
 
-        card = BreezeInfoContainer("Anti-Swear Filter List", desc)
+        card = KINETICHOSTInfoContainer("Anti-Swear Filter List", desc)
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @antiswear.command(name="regex", description="Toggle regex-based matching for the blocked words list")
@@ -386,7 +386,7 @@ class Moderation(commands.Cog):
         cache.invalidate(guild_id)
 
         mode_str = "Regex patterns" if mode else "Standard strings"
-        card = BreezeSuccessContainer("Engine Changed", f"Anti-Swear word matching updated to use **{mode_str}**.")
+        card = KINETICHOSTSuccessContainer("Engine Changed", f"Anti-Swear word matching updated to use **{mode_str}**.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     # Whitelist command group
@@ -410,7 +410,7 @@ class Moderation(commands.Cog):
             await db.commit()
         cache.invalidate(guild_id)
 
-        card = BreezeSuccessContainer("Role Whitelist Updated", f"Role {role.mention} has been **{action_str}**.")
+        card = KINETICHOSTSuccessContainer("Role Whitelist Updated", f"Role {role.mention} has been **{action_str}**.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @whitelist.command(name="channel", description="Toggle whether a channel is bypassed by the anti-swear filter")
@@ -431,7 +431,7 @@ class Moderation(commands.Cog):
             await db.commit()
         cache.invalidate(guild_id)
 
-        card = BreezeSuccessContainer("Channel Whitelist Updated", f"Channel {channel.mention} has been **{action_str}**.")
+        card = KINETICHOSTSuccessContainer("Channel Whitelist Updated", f"Channel {channel.mention} has been **{action_str}**.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @antiswear.command(name="warnings", description="Check the number of active swearing warnings for a member")
@@ -445,7 +445,7 @@ class Moderation(commands.Cog):
                 row = await c.fetchone()
                 warnings = row[0] if row else 0
 
-        card = BreezeInfoContainer("Swear Warning Count", f"{member.mention} currently has **{warnings}** active language warning(s).")
+        card = KINETICHOSTInfoContainer("Swear Warning Count", f"{member.mention} currently has **{warnings}** active language warning(s).")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @antiswear.command(name="clearwarnings", description="Reset swearing warnings for a member")
@@ -458,7 +458,7 @@ class Moderation(commands.Cog):
             await db.execute("DELETE FROM antiswear_warnings WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
             await db.commit()
 
-        card = BreezeSuccessContainer("Warnings Reset", f"Successfully cleared language warnings for {member.mention}.")
+        card = KINETICHOSTSuccessContainer("Warnings Reset", f"Successfully cleared language warnings for {member.mention}.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
 async def setup(bot: commands.Bot):

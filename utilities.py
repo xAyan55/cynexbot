@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 import logging
 import re
@@ -26,12 +26,12 @@ from discord import MediaGalleryItem
 
 import ui
 from ui import (
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeWarningContainer,
-    BreezeInfoContainer,
-    BreezePaginationContainer,
-    BreezeContainerBuilder,
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTWarningContainer,
+    KINETICHOSTInfoContainer,
+    KINETICHOSTPaginationContainer,
+    KINETICHOSTContainerBuilder,
     create_info_card,
     create_success_section,
     create_warning_section,
@@ -41,8 +41,8 @@ from ui import (
     create_pagination_menu
 )
 
-logger = logging.getLogger("Breeze.Utilities")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.Utilities")
+DB_PATH = "kinetichost.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # UTILITY DATABASE LOGGER HELPER
@@ -140,7 +140,7 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
                 voter_lines.append(f"<@{voter_id}> voted for {choices_str}")
             status_text += "\n" + "\n".join(voter_lines)
 
-    builder = BreezeContainerBuilder(
+    builder = KINETICHOSTContainerBuilder(
         title=f"Poll: {question}",
         description="Cast your vote using the buttons below.",
         accent_color=3447003
@@ -154,8 +154,8 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
     if status == "active":
         row_items = []
         for idx, opt in enumerate(options):
-            row_items.append(discord.ui.Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"breeze:poll:vote:{idx}"))
-        row_items.append(discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel"))
+            row_items.append(discord.ui.Button(label=opt, style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:poll:vote:{idx}"))
+        row_items.append(discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:poll:cancel"))
         builder.add_buttons(*row_items)
         
     return builder.build()
@@ -175,14 +175,14 @@ async def handle_poll_vote_interaction(interaction: discord.Interaction, option_
             row = await cursor.fetchone()
             
     if not row:
-        err = BreezeErrorContainer("Poll Not Found", "Poll data not found in database.")
+        err = KINETICHOSTErrorContainer("Poll Not Found", "Poll data not found in database.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
     question, options_json, votes_json, anonymous_int, allow_multiple_int, end_time_str, status = row
     
     if status != "active":
-        err = BreezeErrorContainer("Poll Inactive", "This poll has already ended.")
+        err = KINETICHOSTErrorContainer("Poll Inactive", "This poll has already ended.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
@@ -221,7 +221,7 @@ async def handle_poll_vote_interaction(interaction: discord.Interaction, option_
         
     layout = build_poll_layout(question, options, votes, anonymous, allow_multiple, end_time_epoch, status)
     await interaction.message.edit(view=layout)
-    success = BreezeSuccessContainer("Vote Saved", f"Your vote has been successfully {msg_action}!")
+    success = KINETICHOSTSuccessContainer("Vote Saved", f"Your vote has been successfully {msg_action}!")
     await interaction.followup.send(view=success.build(), ephemeral=True)
 
 async def handle_poll_cancel_interaction(interaction: discord.Interaction):
@@ -238,20 +238,20 @@ async def handle_poll_cancel_interaction(interaction: discord.Interaction):
             row = await cursor.fetchone()
             
     if not row:
-        err = BreezeErrorContainer("Poll Not Found", "Poll metadata was not located.")
+        err = KINETICHOSTErrorContainer("Poll Not Found", "Poll metadata was not located.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
     creator_id, question, options_json, votes_json, anonymous_int, allow_multiple_int, end_time_str, status = row
     
     if status != "active":
-        err = BreezeErrorContainer("Poll Inactive", "This poll is already closed or cancelled.")
+        err = KINETICHOSTErrorContainer("Poll Inactive", "This poll is already closed or cancelled.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
     is_admin = interaction.user.guild_permissions.administrator
     if user_id != creator_id and not is_admin:
-        err = BreezeErrorContainer("Unauthorized Action", "Only the poll creator or administrators can cancel this poll.")
+        err = KINETICHOSTErrorContainer("Unauthorized Action", "Only the poll creator or administrators can cancel this poll.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
         return
         
@@ -266,7 +266,7 @@ async def handle_poll_cancel_interaction(interaction: discord.Interaction):
     
     layout = build_poll_layout(question, options, votes, anonymous, allow_multiple, int(datetime.now().timestamp()), "cancelled")
     await interaction.message.edit(view=layout)
-    success = BreezeSuccessContainer("Poll Cancelled", "This poll status has been marked as cancelled.")
+    success = KINETICHOSTSuccessContainer("Poll Cancelled", "This poll status has been marked as cancelled.")
     await interaction.followup.send(view=success.build(), ephemeral=True)
 
 class PersistentPollView(discord.ui.View):
@@ -274,23 +274,23 @@ class PersistentPollView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-    @discord.ui.button(label="Option 1", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:vote:0")
+    @discord.ui.button(label="Option 1", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:poll:vote:0")
     async def vote_0(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_vote_interaction(interaction, 0)
 
-    @discord.ui.button(label="Option 2", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:vote:1")
+    @discord.ui.button(label="Option 2", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:poll:vote:1")
     async def vote_1(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_vote_interaction(interaction, 1)
 
-    @discord.ui.button(label="Option 3", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:vote:2")
+    @discord.ui.button(label="Option 3", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:poll:vote:2")
     async def vote_2(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_vote_interaction(interaction, 2)
 
-    @discord.ui.button(label="Option 4", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:vote:3")
+    @discord.ui.button(label="Option 4", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:poll:vote:3")
     async def vote_3(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_vote_interaction(interaction, 3)
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="breeze:poll:cancel")
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:poll:cancel")
     async def cancel_poll(self, interaction: discord.Interaction, button: discord.ui.Button):
         await handle_poll_cancel_interaction(interaction)
 
@@ -451,7 +451,7 @@ class Utilities(commands.Cog):
                         user = await self.bot.fetch_user(int(user_id))
                         
                     if channel and user:
-                        rem_layout = BreezeInfoContainer("Breeze Reminder Alert", text)
+                        rem_layout = KINETICHOSTInfoContainer("KINETICHOST Reminder Alert", text)
                         rem_layout.add_section("Recipient", user.mention)
                         rem_layout.add_section("Setting Details", "To clear/modify future reminders, type `/remind list`.")
                         await channel.send(content=user.mention, view=rem_layout.build())
@@ -529,7 +529,7 @@ class Utilities(commands.Cog):
                 await db.execute("DELETE FROM afk_users WHERE user_id = ?", (str(message.author.id),))
                 await db.commit()
                 
-            welcome = BreezeSuccessContainer("Welcome Back", f"Hello {message.author.mention}, I've removed your AFK status.")
+            welcome = KINETICHOSTSuccessContainer("Welcome Back", f"Hello {message.author.mention}, I've removed your AFK status.")
             await message.channel.send(view=welcome.build(), reference=message, delete_after=10)
             
         if message.mentions:
@@ -551,7 +551,7 @@ class Utilities(commands.Cog):
                     except Exception:
                         time_display = "some time ago"
                         
-                    afk_card = BreezeInfoContainer("Member AFK", f"💤 **{user.display_name}** is currently Away From Keyboard.")
+                    afk_card = KINETICHOSTInfoContainer("Member AFK", f"💤 **{user.display_name}** is currently Away From Keyboard.")
                     afk_card.add_section("Reason", reason)
                     afk_card.add_section("Away Since", time_display)
                     await message.channel.send(view=afk_card.build(), reference=message, delete_after=10)
@@ -740,7 +740,7 @@ class Utilities(commands.Cog):
         await log_command_usage("avatar", interaction)
         target = member or interaction.user
         
-        builder = BreezeContainerBuilder(f"Avatar of {target.name}", f"Avatar profile asset for {target.mention}")
+        builder = KINETICHOSTContainerBuilder(f"Avatar of {target.name}", f"Avatar profile asset for {target.mention}")
         builder.add_section("Metadata Details", f"• **Avatar URL:** [Download Link]({target.display_avatar.url})")
         builder.layout.add_item(MediaGallery(MediaGalleryItem(target.display_avatar.url)))
         await interaction.followup.send(view=builder.build(), ephemeral=True)
@@ -758,7 +758,7 @@ class Utilities(commands.Cog):
             await interaction.followup.send(view=err, ephemeral=True)
             return
             
-        builder = BreezeContainerBuilder(f"Profile Banner of {target.name}", f"Profile banner asset for {target.mention}")
+        builder = KINETICHOSTContainerBuilder(f"Profile Banner of {target.name}", f"Profile banner asset for {target.mention}")
         builder.add_section("Metadata Details", f"• **Banner URL:** [Download Link]({user.banner.url})")
         builder.layout.add_item(MediaGallery(MediaGalleryItem(user.banner.url)))
         await interaction.followup.send(view=builder.build(), ephemeral=True)
@@ -863,10 +863,10 @@ class Utilities(commands.Cog):
             )
             await db.commit()
             
-        success = BreezeSuccessContainer("AFK Status Enabled", f"I have set your status to AFK: **{reason}**")
+        success = KINETICHOSTSuccessContainer("AFK Status Enabled", f"I have set your status to AFK: **{reason}**")
         await interaction.followup.send(view=success.build(), ephemeral=True)
         
-        broadcast = BreezeInfoContainer("AFK Notification", f"💤 {interaction.user.mention} is now Away From Keyboard: **{reason}**")
+        broadcast = KINETICHOSTInfoContainer("AFK Notification", f"💤 {interaction.user.mention} is now Away From Keyboard: **{reason}**")
         await interaction.channel.send(view=broadcast.build())
 
     @app_commands.command(name="snipe", description="Snipe recently deleted or edited messages")
@@ -882,11 +882,11 @@ class Utilities(commands.Cog):
         if type == "deleted":
             cache = self.sniped_deleted.get(channel_id)
             if not cache or len(cache) == 0:
-                err = BreezeErrorContainer("Sniper Log Empty", "No recently deleted messages found in this channel.")
+                err = KINETICHOSTErrorContainer("Sniper Log Empty", "No recently deleted messages found in this channel.")
                 await interaction.followup.send(view=err.build(), ephemeral=True)
                 return
             msg = cache[-1]
-            card = BreezeWarningContainer("Sniped Deleted Message", f"Author: {msg['author'].mention}")
+            card = KINETICHOSTWarningContainer("Sniped Deleted Message", f"Author: {msg['author'].mention}")
             card.add_section("Deleted Message Content", msg["content"] or "*No content (attachment only or empty)*")
             if msg["attachments"]:
                 card.add_section("Attachments URLs", "\n".join(msg["attachments"]))
@@ -895,11 +895,11 @@ class Utilities(commands.Cog):
         else:
             cache = self.sniped_edited.get(channel_id)
             if not cache or len(cache) == 0:
-                err = BreezeErrorContainer("Sniper Log Empty", "No recently edited messages found in this channel.")
+                err = KINETICHOSTErrorContainer("Sniper Log Empty", "No recently edited messages found in this channel.")
                 await interaction.followup.send(view=err.build(), ephemeral=True)
                 return
             msg = cache[-1]
-            card = BreezeWarningContainer("Sniped Edited Message", f"Author: {msg['author'].mention}")
+            card = KINETICHOSTWarningContainer("Sniped Edited Message", f"Author: {msg['author'].mention}")
             card.add_section("Content Before", msg["before"] or "*Empty*")
             card.add_section("Content After", msg["after"] or "*Empty*")
             card.add_section("Time Logged", f"<t:{int(msg['timestamp'].timestamp())}:R>")
@@ -927,13 +927,13 @@ class Utilities(commands.Cog):
         
         opt_list = [o.strip() for o in options.split(',') if o.strip()]
         if len(opt_list) < 2 or len(opt_list) > 4:
-            err = BreezeErrorContainer("Layout Restrictions", "Poll must contain between 2 and 4 options to fit action rows.")
+            err = KINETICHOSTErrorContainer("Layout Restrictions", "Poll must contain between 2 and 4 options to fit action rows.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         seconds = parse_duration(duration)
         if not seconds:
-            err = BreezeErrorContainer("Invalid Duration", "Please specify a correct duration tag like `1h`, `30m` or `1d`.")
+            err = KINETICHOSTErrorContainer("Invalid Duration", "Please specify a correct duration tag like `1h`, `30m` or `1d`.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
@@ -950,7 +950,7 @@ class Utilities(commands.Cog):
             )
             await db.commit()
             
-        success = BreezeSuccessContainer("Poll Created", f"Your poll was successfully posted in {interaction.channel.mention}.")
+        success = KINETICHOSTSuccessContainer("Poll Created", f"Your poll was successfully posted in {interaction.channel.mention}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="lock", description="Lock a channel to prevent users from sending messages")
@@ -963,17 +963,17 @@ class Utilities(commands.Cog):
         
         overwrite = target.overwrites_for(interaction.guild.default_role)
         if overwrite.send_messages is False:
-            err = BreezeErrorContainer("Conflict", f"{target.mention} is already locked.")
+            err = KINETICHOSTErrorContainer("Conflict", f"{target.mention} is already locked.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         overwrite.send_messages = False
         await target.set_permissions(interaction.guild.default_role, overwrite=overwrite, reason=f"Channel locked by {interaction.user}")
         
-        broadcast = BreezeWarningContainer("Channel Locked", f"🔒 **This channel has been locked by staff.**")
+        broadcast = KINETICHOSTWarningContainer("Channel Locked", f"🔒 **This channel has been locked by staff.**")
         await target.send(view=broadcast.build())
         
-        success = BreezeSuccessContainer("Channel Locked Successfully", f"Locked {target.mention}.")
+        success = KINETICHOSTSuccessContainer("Channel Locked Successfully", f"Locked {target.mention}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="unlock", description="Unlock a channel to allow users to send messages")
@@ -986,17 +986,17 @@ class Utilities(commands.Cog):
         
         overwrite = target.overwrites_for(interaction.guild.default_role)
         if overwrite.send_messages is not False:
-            err = BreezeErrorContainer("Conflict", f"{target.mention} is not locked.")
+            err = KINETICHOSTErrorContainer("Conflict", f"{target.mention} is not locked.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         overwrite.send_messages = None
         await target.set_permissions(interaction.guild.default_role, overwrite=overwrite, reason=f"Channel unlocked by {interaction.user}")
         
-        broadcast = BreezeSuccessContainer("Channel Unlocked", f"🔓 **This channel has been unlocked by staff.**")
+        broadcast = KINETICHOSTSuccessContainer("Channel Unlocked", f"🔓 **This channel has been unlocked by staff.**")
         await target.send(view=broadcast.build())
         
-        success = BreezeSuccessContainer("Channel Unlocked Successfully", f"Unlocked {target.mention}.")
+        success = KINETICHOSTSuccessContainer("Channel Unlocked Successfully", f"Unlocked {target.mention}.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="slowmode", description="Set slowmode delay for a channel")
@@ -1033,19 +1033,19 @@ class Utilities(commands.Cog):
         await log_command_usage("purge", interaction)
         
         if limit < 1 or limit > 100:
-            err = BreezeErrorContainer("Invalid Limit", "Purge limit must be between 1 and 100.")
+            err = KINETICHOSTErrorContainer("Invalid Limit", "Purge limit must be between 1 and 100.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         deleted = await interaction.channel.purge(limit=limit)
-        success = BreezeSuccessContainer("Purge Completed", f"Successfully deleted `{len(deleted)}` messages.")
+        success = KINETICHOSTSuccessContainer("Purge Completed", f"Successfully deleted `{len(deleted)}` messages.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     # ══════════════════════════════════════════════════════════════════════
     # EXTENDED UTILITYslash COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    @app_commands.command(name="help", description="Explore Breeze commands, setup guides and utilities")
+    @app_commands.command(name="help", description="Explore KINETICHOST commands, setup guides and utilities")
     async def help_menu(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("help", interaction)
@@ -1138,7 +1138,7 @@ class Utilities(commands.Cog):
                     ("Slowmode & Purge", "`/slowmode [seconds]` / `/purge [limit]`\nSet slowmode delay or bulk delete messages."),
                     ("Sticky Messages", "`/sticky create [text]` / `/sticky delete`\nManage sticky messages in channels."),
                     ("Profile & Server", "`/userinfo` / `/serverinfo`\nDetailed visual stats overview cards."),
-                    ("Hosting Plans", "`/plans`\nShow official BreezeBytes hosting and pricing plans."),
+                    ("Hosting Plans", "`/plans`\nShow official KINETICHOSTBytes hosting and pricing plans."),
                     ("Avatar & Banner", "`/avatar` / `/banner`\nView member profile avatars and banners."),
                     ("Bot Diagnostics", "`/ping` / `/botinfo` / `/uptime` / `/stats`\nCheck bot system stats and diagnostics."),
                     ("Scheduler Reminders", "`/remind set` / `/remind list` / `/remind delete`\nSchedule, list, or delete reminders.")
@@ -1146,10 +1146,10 @@ class Utilities(commands.Cog):
             }
         ]
         
-        paginator = create_pagination_menu("Breeze Help Menu", pages, interaction.user.id)
+        paginator = create_pagination_menu("KINETICHOST Help Menu", pages, interaction.user.id)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
-    @app_commands.command(name="botinfo", description="Show information about the Breeze bot")
+    @app_commands.command(name="botinfo", description="Show information about the KineticHost Bot")
     async def botinfo(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("botinfo", interaction)
@@ -1161,14 +1161,14 @@ class Utilities(commands.Cog):
         discord_version = discord.__version__
         
         sections = {
-            "👥 Developer Team": "`Breeze Developer Team`",
+            "👥 Developer Team": "`KINETICHOST Developer Team`",
             "⚡ Gateway Latency": f"`{ping}ms`",
             "⏰ System Uptime": f"`{uptime}`",
             "💻 Host Platform": f"`{os_name}`",
             "🐍 Python Version": f"`{python_version}`",
             "📦 Library Version": f"`discord.py v{discord_version}`"
         }
-        card = create_info_card("System Information", "Breeze Bot Diagnostics & System Details", sections)
+        card = create_info_card("System Information", "KineticHost Bot Diagnostics & System Details", sections)
         await interaction.followup.send(view=card, ephemeral=True)
 
     @app_commands.command(name="uptime", description="Check how long the bot has been running")
@@ -1225,7 +1225,7 @@ class Utilities(commands.Cog):
         card = create_info_card("Guild Analytics Report", "Metrics logging from this server.", sections)
         await interaction.followup.send(view=card, ephemeral=True)
 
-    @app_commands.command(name="invite", description="Get the invite link for Breeze")
+    @app_commands.command(name="invite", description="Get the invite link for KINETICHOST")
     async def command_invite(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("invite", interaction)
@@ -1241,7 +1241,7 @@ class Utilities(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("support", interaction)
         
-        url = "https://discord.gg/breeze"
+        url = "https://discord.gg/KINETICHOST"
         card = create_info_card("Help Desk Support", "Need help setting up systems or reporting bugs? Join our support server.", {})
         btn = Button(label="Join Server", style=discord.ButtonStyle.link, url=url)
         card.add_item(ActionRow(btn))
@@ -1264,7 +1264,7 @@ class Utilities(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("vote", interaction)
         
-        url = "https://top.gg/bot/breeze"
+        url = "https://top.gg/bot/KINETICHOST"
         card = create_success_section("Vote", "Support the development by voting!")
         btn = Button(label="Vote", style=discord.ButtonStyle.link, url=url)
         card.add_item(ActionRow(btn))
@@ -1276,9 +1276,9 @@ class Utilities(commands.Cog):
         await log_command_usage("links", interaction)
         
         invite = f"https://discord.com/api/oauth2/authorize?client_id={self.bot.user.id}&permissions=8&scope=bot%20applications.commands"
-        support = "https://discord.gg/breeze"
-        website = "https://breeze.dev"
-        vote = "https://top.gg/bot/breeze"
+        support = "https://discord.gg/KINETICHOST"
+        website = "https://KINETICHOST.dev"
+        vote = "https://top.gg/bot/KINETICHOST"
         
         sections = {
             "Web Portal": f"[Website]({website})",
@@ -1286,17 +1286,17 @@ class Utilities(commands.Cog):
             "Help Desk": f"[Support Server]({support})",
             "Top.gg Portal": f"[Vote Bot]({vote})"
         }
-        card = create_info_card("Breeze Directory Links", "Useful official references.", sections)
+        card = create_info_card("KINETICHOST Directory Links", "Useful official references.", sections)
         await interaction.followup.send(view=card, ephemeral=True)
 
-    @app_commands.command(name="plans", description="Show official BreezeBytes hosting and pricing plans")
+    @app_commands.command(name="plans", description="Show official KINETICHOSTBytes hosting and pricing plans")
     async def plans(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         await log_command_usage("plans", interaction)
         
         # Build the premium single container layout as in the second screenshot
-        builder = BreezeContainerBuilder(
-            title="BreezeBytes - Paid Hosting Plans",
+        builder = KINETICHOSTContainerBuilder(
+            title="KINETICHOSTBytes - Paid Hosting Plans",
             accent_color=3447003
         )
         
@@ -1304,7 +1304,7 @@ class Utilities(commands.Cog):
         mc_desc = (
             "Starting from only **₹80/m**\n"
             "High performance, uptime etc.\n\n"
-            "**Visit The Plans:** [Click Here](https://breeze.dev)"
+            "**Visit The Plans:** [Click Here](https://KINETICHOST.dev)"
         )
         builder.add_section("Minecraft Plans", mc_desc, accessory=Thumbnail("https://i.imgur.com/8N48x3W.png"))
         
@@ -1312,7 +1312,7 @@ class Utilities(commands.Cog):
         vps_desc = (
             "Starting from only **₹120/m**\n"
             "High performance, uptime etc.\n\n"
-            "**Visit The Plans:** [Click Here](https://breeze.dev)"
+            "**Visit The Plans:** [Click Here](https://KINETICHOST.dev)"
         )
         builder.add_section("VPS Plans", vps_desc, accessory=Thumbnail("https://i.imgur.com/kP859e8.png"))
         
@@ -1320,14 +1320,14 @@ class Utilities(commands.Cog):
         bot_desc = (
             "Starting from only **₹20/m**\n"
             "High performance, uptime etc.\n\n"
-            "**Visit The Plans:** [Click Here](https://breeze.dev)"
+            "**Visit The Plans:** [Click Here](https://KINETICHOST.dev)"
         )
         builder.add_section("Bot Plans", bot_desc, accessory=Thumbnail("https://i.imgur.com/7b58w3H.png"))
         
         # Action Row Buttons
-        btn_mc = Button(label="MC-Plans", style=discord.ButtonStyle.link, url="https://breeze.dev/minecraft")
-        btn_vps = Button(label="VPS Plans", style=discord.ButtonStyle.link, url="https://breeze.dev/vps")
-        btn_bot = Button(label="Bot Plans", style=discord.ButtonStyle.link, url="https://breeze.dev/bot")
+        btn_mc = Button(label="MC-Plans", style=discord.ButtonStyle.link, url="https://KINETICHOST.dev/minecraft")
+        btn_vps = Button(label="VPS Plans", style=discord.ButtonStyle.link, url="https://KINETICHOST.dev/vps")
+        btn_bot = Button(label="Bot Plans", style=discord.ButtonStyle.link, url="https://KINETICHOST.dev/bot")
         builder.add_buttons(btn_mc, btn_vps, btn_bot)
         
         await interaction.followup.send(view=builder.build(), ephemeral=True)
@@ -1358,7 +1358,7 @@ class Utilities(commands.Cog):
 
         if mod_ch:
             try:
-                card = BreezeWarningContainer("Incident Report Filed", f"Report submitted by {interaction.user.mention}")
+                card = KINETICHOSTWarningContainer("Incident Report Filed", f"Report submitted by {interaction.user.mention}")
                 card.add_section("Reporter", f"{interaction.user} (`{interaction.user.id}`)")
                 card.add_section("Report details", issue)
                 card.add_section("Channel Reference", interaction.channel.mention)
@@ -1366,7 +1366,7 @@ class Utilities(commands.Cog):
             except Exception:
                 pass
 
-        success = BreezeSuccessContainer("Report Filed Successfully", "Moderators have been notified about this incident.")
+        success = KINETICHOSTSuccessContainer("Report Filed Successfully", "Moderators have been notified about this incident.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="calculator", description="Solve mathematical expressions securely")
@@ -1377,18 +1377,18 @@ class Utilities(commands.Cog):
         
         safe_chars = set("0123456789+-*/(). ")
         if not all(c in safe_chars for c in expression):
-            err = BreezeErrorContainer("Security Blocked", "Only digits and standard operators (`+`, `-`, `*`, `/`, `(`, `)`) are allowed.")
+            err = KINETICHOSTErrorContainer("Security Blocked", "Only digits and standard operators (`+`, `-`, `*`, `/`, `(`, `)`) are allowed.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
             
         try:
             # Safe evaluation
             res = eval(expression, {"__builtins__": None}, {})
-            card = BreezeSuccessContainer("Mathematical Solver", f"Solved expression: `{expression}`")
+            card = KINETICHOSTSuccessContainer("Mathematical Solver", f"Solved expression: `{expression}`")
             card.add_section("Result Output", f"`{res}`")
             await interaction.followup.send(view=card.build(), ephemeral=True)
         except Exception as e:
-            err = BreezeErrorContainer("Solver Error", f"Failed to compute math expression: {e}")
+            err = KINETICHOSTErrorContainer("Solver Error", f"Failed to compute math expression: {e}")
             await interaction.followup.send(view=err.build(), ephemeral=True)
 
     @app_commands.command(name="weather", description="Query current weather stats for a location")
@@ -1410,7 +1410,7 @@ class Utilities(commands.Cog):
                         humidity = current["humidity"]
                         wind = current["windspeedKmph"]
                         
-                        info = BreezeInfoContainer(f"Weather Report: {location.title()}", f"Current conditions at your target location.")
+                        info = KINETICHOSTInfoContainer(f"Weather Report: {location.title()}", f"Current conditions at your target location.")
                         info.add_section("Temperature", f"`{temp_c}°C` / `{temp_f}°F`")
                         info.add_section("Conditions", desc.title())
                         info.add_section("Humidity", f"`{humidity}%`")
@@ -1421,7 +1421,7 @@ class Utilities(commands.Cog):
             pass
             
         # Fallback
-        info = BreezeWarningContainer(f"Weather Report: {location.title()}", "Weather query timed out. Showing typical climate report.")
+        info = KINETICHOSTWarningContainer(f"Weather Report: {location.title()}", "Weather query timed out. Showing typical climate report.")
         info.add_section("Temperature", "`22.0°C` / `71.6°F`")
         info.add_section("Conditions", "Partly Cloudy")
         info.add_section("Humidity", "`50%`")
@@ -1442,7 +1442,7 @@ class Utilities(commands.Cog):
                         data = await response.json()
                         translated = "".join([sentence[0] for sentence in data[0] if sentence[0]])
                         
-                        info = BreezeSuccessContainer("Translation Complete", f"Language translations auto to `{target_lang}`.")
+                        info = KINETICHOSTSuccessContainer("Translation Complete", f"Language translations auto to `{target_lang}`.")
                         info.add_section("Input String", text)
                         info.add_section("Translated String", translated)
                         await interaction.followup.send(view=info.build(), ephemeral=True)
@@ -1450,7 +1450,7 @@ class Utilities(commands.Cog):
         except Exception:
             pass
             
-        info = BreezeWarningContainer("Translation Failure", "Google translation requests failed. Outputting fallback mock.")
+        info = KINETICHOSTWarningContainer("Translation Failure", "Google translation requests failed. Outputting fallback mock.")
         info.add_section("Input", text)
         info.add_section("Translated Fallback", f"Translated to {target_lang}: {text}")
         await interaction.followup.send(view=info.build(), ephemeral=True)
@@ -1470,13 +1470,13 @@ class Utilities(commands.Cog):
                 try:
                     dt = datetime.strptime(time_str.strip(), '%Y-%m-%d')
                 except Exception:
-                    err = BreezeErrorContainer("Parsing Error", "Invalid time format. Please use `YYYY-MM-DD HH:MM` or `YYYY-MM-DD` or `now`.")
+                    err = KINETICHOSTErrorContainer("Parsing Error", "Invalid time format. Please use `YYYY-MM-DD HH:MM` or `YYYY-MM-DD` or `now`.")
                     await interaction.followup.send(view=err.build(), ephemeral=True)
                     return
                     
         epoch = int(dt.timestamp())
         
-        info = BreezeInfoContainer(f"Timestamp Generator: {dt.strftime('%Y-%m-%d %H:%M')}", "Copy the desired raw format code to display dynamic timestamps in server posts.")
+        info = KINETICHOSTInfoContainer(f"Timestamp Generator: {dt.strftime('%Y-%m-%d %H:%M')}", "Copy the desired raw format code to display dynamic timestamps in server posts.")
         info.add_section("Relative Time (R)", f"`<t:{epoch}:R>` → <t:{epoch}:R>")
         info.add_section("Short Time (t)", f"`<t:{epoch}:t>` → <t:{epoch}:t>")
         info.add_section("Long Time (T)", f"`<t:{epoch}:T>` → <t:{epoch}:T>")
@@ -1506,7 +1506,7 @@ class Utilities(commands.Cog):
                             example = first["example"].replace("[", "").replace("]", "")
                             thumbs_up = first["thumbs_up"]
                             
-                            info = BreezeInfoContainer(f"Urban Dictionary: {word}", "Definition results.")
+                            info = KINETICHOSTInfoContainer(f"Urban Dictionary: {word}", "Definition results.")
                             info.add_section("Definition", definition[:1000])
                             if example:
                                 info.add_section("Example", example[:1000])
@@ -1516,7 +1516,7 @@ class Utilities(commands.Cog):
         except Exception:
             pass
             
-        err = BreezeErrorContainer("No Definition Found", f"Urban Dictionary search returned zero results for `{term}`.")
+        err = KINETICHOSTErrorContainer("No Definition Found", f"Urban Dictionary search returned zero results for `{term}`.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
 
     @app_commands.command(name="github", description="Query repository metrics on GitHub")
@@ -1526,7 +1526,7 @@ class Utilities(commands.Cog):
         await log_command_usage("github", interaction)
         
         url = f"https://api.github.com/repos/{repo}"
-        headers = {"User-Agent": "BreezeBot/1.0"}
+        headers = {"User-Agent": "KineticBot/1.0"}
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers, timeout=5) as response:
@@ -1538,7 +1538,7 @@ class Utilities(commands.Cog):
                         forks = data["forks_count"]
                         issues = data["open_issues_count"]
                         
-                        info = BreezeInfoContainer(f"GitHub: {name}", desc)
+                        info = KINETICHOSTInfoContainer(f"GitHub: {name}", desc)
                         info.add_section("Stargazers", f"⭐ `{stars}`")
                         info.add_section("Forks Count", f"🍴 `{forks}`")
                         info.add_section("Open Issues", f"🐛 `{issues}`")
@@ -1547,7 +1547,7 @@ class Utilities(commands.Cog):
         except Exception:
             pass
             
-        err = BreezeErrorContainer("Repo Offline", f"Could not find or retrieve details for GitHub repository `{repo}`.")
+        err = KINETICHOSTErrorContainer("Repo Offline", f"Could not find or retrieve details for GitHub repository `{repo}`.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
 
     @app_commands.command(name="qr", description="Generate a QR code image link")
@@ -1557,7 +1557,7 @@ class Utilities(commands.Cog):
         await log_command_usage("qr", interaction)
         
         qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(text)}"
-        card = BreezeInfoContainer(f"QR Code Generator")
+        card = KINETICHOSTInfoContainer(f"QR Code Generator")
         card.add_section("Encoded Content", f"`{text}`")
         card.layout.add_item(MediaGallery(MediaGalleryItem(qr_url)))
         await interaction.followup.send(view=card.build(), ephemeral=True)
@@ -1574,7 +1574,7 @@ class Utilities(commands.Cog):
                 async with session.get(api_url, timeout=5) as response:
                     if response.status == 200:
                         short_url = await response.text()
-                        info = BreezeSuccessContainer("URL Link Shortened", "Long URL formatted successfully.")
+                        info = KINETICHOSTSuccessContainer("URL Link Shortened", "Long URL formatted successfully.")
                         info.add_section("Original Link", url)
                         info.add_section("TinyURL Link", short_url)
                         await interaction.followup.send(view=info.build(), ephemeral=True)
@@ -1582,7 +1582,7 @@ class Utilities(commands.Cog):
         except Exception:
             pass
             
-        err = BreezeErrorContainer("API Error", "Failed to shorten URL. Make sure it is formatted correctly.")
+        err = KINETICHOSTErrorContainer("API Error", "Failed to shorten URL. Make sure it is formatted correctly.")
         await interaction.followup.send(view=err.build(), ephemeral=True)
 
     async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -1599,7 +1599,7 @@ class Utilities(commands.Cog):
         elif isinstance(error, app_commands.CommandOnCooldown):
             msg = f"⏳ Command is on cooldown. Try again in `{error.retry_after:.1f}s`."
             
-        err_card = BreezeErrorContainer("Command Execution Failed", msg)
+        err_card = KINETICHOSTErrorContainer("Command Execution Failed", msg)
         try:
             if not interaction.response.is_done():
                 await interaction.response.send_message(view=err_card.build(), ephemeral=True)
@@ -1643,7 +1643,7 @@ class StickyGroup(app_commands.Group, name="sticky"):
             except Exception:
                 pass
                 
-        builder = BreezeContainerBuilder("Sticky Message", None, accent_color=16776960)
+        builder = KINETICHOSTContainerBuilder("Sticky Message", None, accent_color=16776960)
         builder.add_section("Notice", text)
         new_msg = await interaction.channel.send(view=builder.build())
         
@@ -1812,13 +1812,13 @@ class RemindGroup(app_commands.Group, name="remind"):
             async with db.execute("SELECT 1 FROM reminders WHERE id = ? AND user_id = ?", (id, user_id)) as cursor:
                 row = await cursor.fetchone()
             if not row:
-                err = BreezeErrorContainer("Not Found", f"Reminder `{id}` was not found or doesn't belong to you.")
+                err = KINETICHOSTErrorContainer("Not Found", f"Reminder `{id}` was not found or doesn't belong to you.")
                 await interaction.followup.send(view=err.build(), ephemeral=True)
                 return
             await db.execute("DELETE FROM reminders WHERE id = ?", (id,))
             await db.commit()
             
-        success = BreezeSuccessContainer("Reminder Deleted", f"Reminder `{id}` cleared successfully.")
+        success = KINETICHOSTSuccessContainer("Reminder Deleted", f"Reminder `{id}` cleared successfully.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @app_commands.command(name="clear", description="Clear all of your active reminders")
@@ -1831,7 +1831,7 @@ class RemindGroup(app_commands.Group, name="remind"):
             await db.execute("DELETE FROM reminders WHERE user_id = ?", (user_id,))
             await db.commit()
             
-        success = BreezeSuccessContainer("Reminders Cleared", "All personal active reminders have been deleted.")
+        success = KINETICHOSTSuccessContainer("Reminders Cleared", "All personal active reminders have been deleted.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════════════

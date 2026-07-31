@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -8,14 +8,14 @@ from discord import app_commands
 from discord.ext import commands
 
 from ui import (
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeInfoContainer,
-    BreezePaginationContainer
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTInfoContainer,
+    KINETICHOSTPaginationContainer
 )
 
-logger = logging.getLogger("Breeze.InviteTracker")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.InviteTracker")
+DB_PATH = "kinetichost.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # COG IMPLEMENTATION
@@ -213,21 +213,21 @@ class InviteTracker(commands.Cog):
         if not guild:
             return "This command can only be used inside servers."
         if not guild.me.guild_permissions.manage_guild:
-            return "❌ Breeze requires **Manage Server** permission to read and track server invites."
+            return "❌ KINETICHOST requires **Manage Server** permission to read and track server invites."
         return None
 
     # ══════════════════════════════════════════════════════════════════════
     # SLASH COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    invites = app_commands.Group(name="invites", description="Breeze Server Invite tracking commands")
+    invites = app_commands.Group(name="invites", description="KINETICHOST Server Invite tracking commands")
 
     @invites.command(name="me", description="View your server invite statistics")
     async def invites_me(self, interaction: discord.Interaction):
         await interaction.response.defer()
         err = self.check_bot_invite_permissions(interaction)
         if err:
-            card = BreezeErrorContainer("Missing Bot Permissions", err)
+            card = KINETICHOSTErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build())
             return
 
@@ -254,7 +254,7 @@ class InviteTracker(commands.Cog):
             f"• **Fake / New Accounts**: `{fake}`\n"
             f"• **Admin Bonus**: `{bonus}`"
         )
-        card = BreezeInfoContainer(f"Invite Stats for {interaction.user.name}", desc)
+        card = KINETICHOSTInfoContainer(f"Invite Stats for {interaction.user.name}", desc)
         await interaction.followup.send(view=card.build())
 
     @invites.command(name="stats", description="View invite statistics for a specific member")
@@ -262,7 +262,7 @@ class InviteTracker(commands.Cog):
         await interaction.response.defer()
         err = self.check_bot_invite_permissions(interaction)
         if err:
-            card = BreezeErrorContainer("Missing Bot Permissions", err)
+            card = KINETICHOSTErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build())
             return
 
@@ -288,7 +288,7 @@ class InviteTracker(commands.Cog):
             f"• **Fake / New Accounts**: `{fake}`\n"
             f"• **Admin Bonus**: `{bonus}`"
         )
-        card = BreezeInfoContainer(f"Invite Stats for {member.name}", desc)
+        card = KINETICHOSTInfoContainer(f"Invite Stats for {member.name}", desc)
         await interaction.followup.send(view=card.build())
 
     @invites.command(name="invited", description="View exactly who joined the server using a member's invites")
@@ -296,7 +296,7 @@ class InviteTracker(commands.Cog):
         await interaction.response.defer()
         err = self.check_bot_invite_permissions(interaction)
         if err:
-            card = BreezeErrorContainer("Missing Bot Permissions", err)
+            card = KINETICHOSTErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build())
             return
 
@@ -308,7 +308,7 @@ class InviteTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = BreezeInfoContainer(f"Invited Members List", f"No members have joined using invites from {member.name}.")
+            card = KINETICHOSTInfoContainer(f"Invited Members List", f"No members have joined using invites from {member.name}.")
             await interaction.followup.send(view=card.build())
             return
 
@@ -332,7 +332,7 @@ class InviteTracker(commands.Cog):
                 "sections": page_sections
             })
 
-        paginator = BreezePaginationContainer(f"Members Invited by {member.name}", pages, interaction.user.id)
+        paginator = KINETICHOSTPaginationContainer(f"Members Invited by {member.name}", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)
 
     @invites.command(name="leaderboard", description="Display the server's top inviters leaderboard")
@@ -340,7 +340,7 @@ class InviteTracker(commands.Cog):
         await interaction.response.defer()
         err = self.check_bot_invite_permissions(interaction)
         if err:
-            card = BreezeErrorContainer("Missing Bot Permissions", err)
+            card = KINETICHOSTErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build())
             return
 
@@ -357,7 +357,7 @@ class InviteTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = BreezeInfoContainer("Top Inviters Leaderboard", "*No invite statistics found on this server.*")
+            card = KINETICHOSTInfoContainer("Top Inviters Leaderboard", "*No invite statistics found on this server.*")
             await interaction.followup.send(view=card.build())
             return
 
@@ -380,7 +380,7 @@ class InviteTracker(commands.Cog):
                 "sections": page_sections
             })
 
-        paginator = BreezePaginationContainer("Top Inviters Leaderboard", pages, interaction.user.id)
+        paginator = KINETICHOSTPaginationContainer("Top Inviters Leaderboard", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)
 
     @invites.command(name="reset", description="Clear all invite stats for the server")
@@ -394,7 +394,7 @@ class InviteTracker(commands.Cog):
             await db.execute("DELETE FROM invited_by WHERE guild_id = ?", (guild_id,))
             await db.commit()
 
-        card = BreezeSuccessContainer("Statistics Reset", "🗑️ All server invite tracking logs and statistics have been successfully cleared.")
+        card = KINETICHOSTSuccessContainer("Statistics Reset", "🗑️ All server invite tracking logs and statistics have been successfully cleared.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @invites.command(name="bonus", description="Grant bonus invites to a specific member")
@@ -413,7 +413,7 @@ class InviteTracker(commands.Cog):
             """, (guild_id, user_id, amount, amount))
             await db.commit()
 
-        card = BreezeSuccessContainer("Bonus Invites Updated", f"Granted **{amount}** bonus invites to {member.mention}.")
+        card = KINETICHOSTSuccessContainer("Bonus Invites Updated", f"Granted **{amount}** bonus invites to {member.mention}.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
 async def setup(bot: commands.Bot):

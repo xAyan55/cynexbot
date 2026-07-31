@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import aiosqlite
 import json
 import logging
@@ -23,17 +23,17 @@ from discord.ui import (
     Button
 )
 from discord import MediaGalleryItem, SeparatorSpacing
-from ui import BreezeInfoContainer, create_info_card, create_success_section, create_error_section, create_warning_section, BreezeContainerBuilder
+from ui import KINETICHOSTInfoContainer, create_info_card, create_success_section, create_error_section, create_warning_section, KINETICHOSTContainerBuilder
 
-logger = logging.getLogger("Breeze.Tickets")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.Tickets")
+DB_PATH = "kinetichost.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # DATABASE SCHEMAS & INITIALIZATION
 # ══════════════════════════════════════════════════════════════════════
 
 async def init_ticket_db():
-    """Initializes SQLite tables in breeze.db if they do not exist."""
+    """Initializes SQLite tables in kinetichost.db if they do not exist."""
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL")
         # Support tickets table (with claimed and sequential number indexing)
@@ -488,7 +488,7 @@ class GlobalTicketPanelView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-    @discord.ui.button(label="Create Ticket", style=discord.ButtonStyle.secondary, custom_id="breeze:create_ticket", emoji="🎫")
+    @discord.ui.button(label="Create Ticket", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:create_ticket", emoji="🎫")
     async def create_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             panel = await get_ticket_panel(str(interaction.message.id))
@@ -663,10 +663,10 @@ class OpenTicketModal(discord.ui.Modal):
             # Save Ticket Metadata
             await save_ticket(ticket_num, guild_id, str(channel.id), user_id, self.category, self.subject.value)
             
-            # Render V2 greeting welcome components using BreezeContainerBuilder
+            # Render V2 greeting welcome components using KINETICHOSTContainerBuilder
             accent_color_int = parse_color(self.panel_data.get('accent_color', '')) or 3447003 # Blurple
             
-            builder = BreezeContainerBuilder(
+            builder = KINETICHOSTContainerBuilder(
                 title=f"Ticket {ticket_num}",
                 description=f"Hello {user.mention}, thank you for opening a support ticket!",
                 accent_color=accent_color_int,
@@ -684,10 +684,10 @@ class OpenTicketModal(discord.ui.Modal):
             builder.add_section("Ticket Information", info_text)
             
             # Action Row containing Close, Claim, Transcript, Delete buttons
-            btn_close = Button(label="Close", style=discord.ButtonStyle.secondary, custom_id="breeze:close_ticket")
-            btn_claim = Button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="breeze:claim_ticket")
-            btn_trans = Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket")
-            btn_del = Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket")
+            btn_close = Button(label="Close", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:close_ticket")
+            btn_claim = Button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:claim_ticket")
+            btn_trans = Button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:transcript_ticket")
+            btn_del = Button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:delete_ticket")
             builder.add_buttons(btn_close, btn_claim, btn_trans, btn_del)
             
             layout_view = builder.build()
@@ -716,7 +716,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-    @discord.ui.button(label="Close", style=discord.ButtonStyle.secondary, custom_id="breeze:close_ticket", emoji="🔒")
+    @discord.ui.button(label="Close", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:close_ticket", emoji="🔒")
     async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -747,7 +747,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             ))
             root_container.add_item(Separator())
             
-            reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="breeze:reopen_ticket")
+            reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:reopen_ticket")
             root_container.add_item(Section(
                 "Manage Closed Ticket",
                 "Staff can reopen the channel or trigger transcript generation.",
@@ -769,7 +769,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             else:
                 await interaction.followup.send(msg, ephemeral=True)
 
-    @discord.ui.button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="breeze:claim_ticket", emoji="👤")
+    @discord.ui.button(label="Claim", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:claim_ticket", emoji="👤")
     async def claim_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -798,7 +798,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             root_container.add_item(TextDisplay(f"👤 **Ticket Claimed**\nThis staff member will now assist you."))
             root_container.add_item(Separator())
             
-            unclaim_btn = Button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="breeze:unclaim_ticket")
+            unclaim_btn = Button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:unclaim_ticket")
             root_container.add_item(Section(
                 "Claim Actions",
                 "Staff can release this ticket if needed.",
@@ -820,7 +820,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             else:
                 await interaction.followup.send(msg, ephemeral=True)
 
-    @discord.ui.button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="breeze:transcript_ticket", emoji="📄")
+    @discord.ui.button(label="Transcript", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:transcript_ticket", emoji="📄")
     async def transcript_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -868,7 +868,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             else:
                 await interaction.followup.send(msg, ephemeral=True)
 
-    @discord.ui.button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="breeze:delete_ticket", emoji="🗑")
+    @discord.ui.button(label="Delete", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:delete_ticket", emoji="🗑")
     async def delete_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             channel = interaction.channel
@@ -947,7 +947,7 @@ class GlobalTicketControlView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-    @discord.ui.button(label="Reopen", style=discord.ButtonStyle.secondary, custom_id="breeze:reopen_ticket", emoji="🔓")
+    @discord.ui.button(label="Reopen", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:reopen_ticket", emoji="🔓")
     async def reopen(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -992,7 +992,7 @@ class GlobalTicketControlView(discord.ui.View):
             else:
                 await interaction.followup.send(msg, ephemeral=True)
 
-    @discord.ui.button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="breeze:unclaim_ticket", emoji="👤")
+    @discord.ui.button(label="Unclaim", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:unclaim_ticket", emoji="👤")
     async def unclaim(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True)
@@ -1054,7 +1054,7 @@ class TicketPanelBuilderView(discord.ui.LayoutView):
         self.user_id = user_id
         self.guild_id = guild_id
         self.config = {
-            "title": "Breeze Support System",
+            "title": "KINETICHOST Support System",
             "description": "Click the button below to get help from our support team.",
             "accent_color": "#206694",
             "categories": [],
@@ -1072,7 +1072,7 @@ class TicketPanelBuilderView(discord.ui.LayoutView):
             self.clear_items()
             
             accent_int = parse_color(self.config['accent_color']) or 5763719
-            builder = BreezeContainerBuilder("🎫 Breeze Ticket Panel Builder 🎫", "Design your Components V2 support ticket panels visually.", accent_color=accent_int)
+            builder = KINETICHOSTContainerBuilder("🎫 KINETICHOST Ticket Panel Builder 🎫", "Design your Components V2 support ticket panels visually.", accent_color=accent_int)
             
             cats_raw = ", ".join([c['name'] for c in self.config['categories']]) or "None"
             desc_val = self.config['description']
@@ -1308,7 +1308,7 @@ class PublishPanelButton(discord.ui.Button):
                 
             # Create button row
             root.add_item(ActionRow(
-                Button(label="Create Ticket", style=discord.ButtonStyle.secondary, custom_id="breeze:create_ticket", emoji="🎫")
+                Button(label="Create Ticket", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:create_ticket", emoji="🎫")
             ))
             
             v2_view.add_item(root)
@@ -1345,7 +1345,7 @@ class PublishPanelButton(discord.ui.Button):
 
 class TicketGroup(app_commands.Group, name="ticket"):
     def __init__(self, bot: commands.Bot):
-        super().__init__(description="Breeze Support Ticket commands")
+        super().__init__(description="KINETICHOST Support Ticket commands")
         self.bot = bot
         
     @app_commands.command(name="setup", description="Configure server support ticket settings")
@@ -1438,7 +1438,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
             ))
             root_container.add_item(Separator())
             
-            reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="breeze:reopen_ticket")
+            reopen_accessory = Button(label="🔓 Reopen", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:reopen_ticket")
             root_container.add_item(Section(
                 "Manage Closed Ticket",
                 "Reopen the channel or trigger transcript generation.",
@@ -1745,7 +1745,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
                 await interaction.response.send_message("📂 No open tickets in this guild.", ephemeral=True)
                 return
                 
-            card = BreezeInfoContainer("Open Support Tickets", "List of all active support tickets.")
+            card = KINETICHOSTInfoContainer("Open Support Tickets", "List of all active support tickets.")
             desc = ""
             for idx, t in enumerate(tickets_list, 1):
                 creator = guild.get_member(int(t['user_id']))
@@ -1787,7 +1787,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
                 async with conn.execute("SELECT COUNT(*) FROM tickets WHERE guild_id = ? AND claimed_by IS NOT NULL", (guild_id,)) as cursor:
                     claimed = (await cursor.fetchone())[0]
                     
-            card = BreezeInfoContainer("Support Ticket Statistics", "Historical metrics for support tickets in this server.")
+            card = KINETICHOSTInfoContainer("Support Ticket Statistics", "Historical metrics for support tickets in this server.")
             card.add_section("Open Tickets", f"`{open_count}`")
             card.add_section("Closed Tickets", f"`{closed}`")
             card.add_section("Claimed Tickets", f"`{claimed}`")

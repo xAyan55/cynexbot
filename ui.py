@@ -1,10 +1,10 @@
-import discord
+﻿import discord
 from discord.ui import LayoutView, Container, TextDisplay, Separator, Section, ActionRow, Button, Thumbnail, MediaGallery
 from discord import MediaGalleryItem, SeparatorSpacing
 from typing import Optional, List
 
-class BreezeContainerBuilder:
-    """Universal Breeze UI Builder using Components V2 Layouts with auto-splitting."""
+class KINETICHOSTContainerBuilder:
+    """Universal KINETICHOST UI Builder using Components V2 Layouts with auto-splitting."""
     def __init__(self, title: str, description: Optional[str] = None, accent_color: Optional[int] = None, thumbnail_url: Optional[str] = None):
         self.layout = LayoutView()
         self.accent_color = accent_color
@@ -89,23 +89,23 @@ class BreezeContainerBuilder:
         validate_v2_layout(self.layout)
         return self.layout
 
-class BreezeSuccessContainer(BreezeContainerBuilder):
+class KINETICHOSTSuccessContainer(KINETICHOSTContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
         super().__init__(f"Success: {title}", description, accent_color=None)
 
-class BreezeErrorContainer(BreezeContainerBuilder):
+class KINETICHOSTErrorContainer(KINETICHOSTContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
         super().__init__(f"Error: {title}", description, accent_color=None)
 
-class BreezeWarningContainer(BreezeContainerBuilder):
+class KINETICHOSTWarningContainer(KINETICHOSTContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
         super().__init__(f"Warning: {title}", description, accent_color=None)
 
-class BreezeInfoContainer(BreezeContainerBuilder):
+class KINETICHOSTInfoContainer(KINETICHOSTContainerBuilder):
     def __init__(self, title: str, description: Optional[str] = None):
         super().__init__(f"Info: {title}", description, accent_color=None)
 
-class BreezePaginationContainer(LayoutView):
+class KINETICHOSTPaginationContainer(LayoutView):
     """Component V2 pagination view displaying pages of content dynamically."""
     def __init__(self, title: str, pages: List[dict], user_id: int, accent_color: Optional[int] = None):
         super().__init__(timeout=180)
@@ -128,7 +128,7 @@ class BreezePaginationContainer(LayoutView):
                 "sections": [("Page Content", page_data)]
             }
             
-        builder = BreezeContainerBuilder(
+        builder = KINETICHOSTContainerBuilder(
             title=page_data.get("title", self.title),
             description=page_data.get("description"),
             accent_color=self.accent_color
@@ -147,13 +147,13 @@ class BreezePaginationContainer(LayoutView):
         prev_btn = Button(
             label="Previous",
             style=discord.ButtonStyle.secondary,
-            custom_id="breeze:paginate:prev",
+            custom_id="KINETICHOST:paginate:prev",
             disabled=(self.current_page == 0)
         )
         next_btn = Button(
             label="Next",
             style=discord.ButtonStyle.secondary,
-            custom_id="breeze:paginate:next",
+            custom_id="KINETICHOST:paginate:next",
             disabled=(self.current_page == len(self.pages) - 1)
         )
         
@@ -189,40 +189,40 @@ class BreezePaginationContainer(LayoutView):
 # Shared UI Helper Functions
 
 def create_info_card(title: str, description: Optional[str], sections_dict: dict, thumbnail_url: Optional[str] = None, accent_color: int = 3447003) -> LayoutView:
-    builder = BreezeContainerBuilder(title, description, accent_color=accent_color, thumbnail_url=thumbnail_url)
+    builder = KINETICHOSTContainerBuilder(title, description, accent_color=accent_color, thumbnail_url=thumbnail_url)
     for sec_title, sec_desc in sections_dict.items():
         builder.add_section(sec_title, sec_desc)
         builder.add_separator()
     return builder.build()
 
 def create_success_section(title: str, message: str) -> LayoutView:
-    builder = BreezeSuccessContainer(title)
+    builder = KINETICHOSTSuccessContainer(title)
     builder.add_section("Information", message)
     return builder.build()
 
 def create_warning_section(title: str, message: str) -> LayoutView:
-    builder = BreezeWarningContainer(title)
+    builder = KINETICHOSTWarningContainer(title)
     builder.add_section("Warning Detail", message)
     return builder.build()
 
 def create_error_section(title: str, message: str) -> LayoutView:
-    builder = BreezeErrorContainer(title)
+    builder = KINETICHOSTErrorContainer(title)
     builder.add_section("Error Detail", message)
     return builder.build()
 
 def create_user_card(member: discord.Member, sections_dict: dict) -> LayoutView:
-    builder = BreezeContainerBuilder(f"👤 User Profile", f"Details for {member.mention}", accent_color=3447003, thumbnail_url=member.display_avatar.url if member.display_avatar else None)
+    builder = KINETICHOSTContainerBuilder(f"👤 User Profile", f"Details for {member.mention}", accent_color=3447003, thumbnail_url=member.display_avatar.url if member.display_avatar else None)
     for sec_title, sec_desc in sections_dict.items():
         builder.add_section(sec_title, sec_desc)
         builder.add_separator()
     return builder.build()
 
 def create_server_card(guild: discord.Guild, sections_dict: dict) -> LayoutView:
-    builder = BreezeContainerBuilder(f"🏠 Server Information", f"Detailed breakdown of **{guild.name}**", accent_color=3447003, thumbnail_url=guild.icon.url if guild.icon else None)
+    builder = KINETICHOSTContainerBuilder(f"🏠 Server Information", f"Detailed breakdown of **{guild.name}**", accent_color=3447003, thumbnail_url=guild.icon.url if guild.icon else None)
     for sec_title, sec_desc in sections_dict.items():
         builder.add_section(sec_title, sec_desc)
         builder.add_separator()
     return builder.build()
 
 def create_pagination_menu(title: str, pages_data: List[dict], user_id: int, accent_color: int = 3447003) -> LayoutView:
-    return BreezePaginationContainer(title, pages_data, user_id, accent_color)
+    return KINETICHOSTPaginationContainer(title, pages_data, user_id, accent_color)

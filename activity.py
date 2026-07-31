@@ -1,4 +1,4 @@
-import re
+﻿import re
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -9,14 +9,14 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from ui import (
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeInfoContainer,
-    BreezePaginationContainer
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTInfoContainer,
+    KINETICHOSTPaginationContainer
 )
 
-logger = logging.getLogger("Breeze.MessageTracker")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.MessageTracker")
+DB_PATH = "kinetichost.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # MEMORY BUFFER FOR WRITES BATCHING
@@ -176,7 +176,7 @@ class MessageTracker(commands.Cog):
     # SLASH COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    messages = app_commands.Group(name="messages", description="Breeze Server Activity tracking settings and statistics")
+    messages = app_commands.Group(name="messages", description="KINETICHOST Server Activity tracking settings and statistics")
 
     @messages.command(name="stats", description="View your server message activity statistics")
     async def messages_stats(self, interaction: discord.Interaction):
@@ -233,7 +233,7 @@ class MessageTracker(commands.Cog):
             f"• **Active Chatting Days**: `{active_days}` days\n"
             f"• **Last Active**: `{last_active}`"
         )
-        card = BreezeInfoContainer(f"Activity Statistics for {interaction.user.name}", desc)
+        card = KINETICHOSTInfoContainer(f"Activity Statistics for {interaction.user.name}", desc)
         await interaction.followup.send(view=card.build())
 
     @messages.command(name="user", description="View message activity statistics for a specific member")
@@ -289,7 +289,7 @@ class MessageTracker(commands.Cog):
             f"• **Active Chatting Days**: `{active_days}` days\n"
             f"• **Last Active**: `{last_active}`"
         )
-        card = BreezeInfoContainer(f"Activity Statistics for {member.name}", desc)
+        card = KINETICHOSTInfoContainer(f"Activity Statistics for {member.name}", desc)
         await interaction.followup.send(view=card.build())
 
     @messages.command(name="leaderboard", description="Display the server's most active members")
@@ -309,7 +309,7 @@ class MessageTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = BreezeInfoContainer("Chat Activity Leaderboard", "*No activity statistics found on this server.*")
+            card = KINETICHOSTInfoContainer("Chat Activity Leaderboard", "*No activity statistics found on this server.*")
             await interaction.followup.send(view=card.build())
             return
 
@@ -333,7 +333,7 @@ class MessageTracker(commands.Cog):
                 "sections": page_sections
             })
 
-        paginator = BreezePaginationContainer("Server Chat Activity Leaderboard", pages, interaction.user.id)
+        paginator = KINETICHOSTPaginationContainer("Server Chat Activity Leaderboard", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)
 
     @messages.command(name="activity", description="Display aggregated message counts sent on the server recently")
@@ -372,7 +372,7 @@ class MessageTracker(commands.Cog):
             f"• **This Month (Past 30 Days)**: `{month_sum}` messages\n"
             f"• **Historical Total messages**: `{total_sum}` messages"
         )
-        card = BreezeInfoContainer(f"Server Aggregate Activity Stats", desc)
+        card = KINETICHOSTInfoContainer(f"Server Aggregate Activity Stats", desc)
         await interaction.followup.send(view=card.build())
 
     @messages.command(name="botignore", description="Configure whether bot messages are ignored in statistics")
@@ -392,7 +392,7 @@ class MessageTracker(commands.Cog):
         self.settings_cache.pop(guild_id, None)
 
         status_str = "ignored" if ignore else "counted"
-        card = BreezeSuccessContainer("Settings Updated", f"Bot messages will now be **{status_str}** in chat activity statistics.")
+        card = KINETICHOSTSuccessContainer("Settings Updated", f"Bot messages will now be **{status_str}** in chat activity statistics.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @messages.command(name="reset", description="Reset chat statistics for a specific member")
@@ -414,7 +414,7 @@ class MessageTracker(commands.Cog):
             await db.execute("DELETE FROM message_daily_stats WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
             await db.commit()
 
-        card = BreezeSuccessContainer("User Reset Successful", f"Cleared all chat activity history records for {member.mention}.")
+        card = KINETICHOSTSuccessContainer("User Reset Successful", f"Cleared all chat activity history records for {member.mention}.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @messages.command(name="resetall", description="Reset all chat statistics for this server")
@@ -432,7 +432,7 @@ class MessageTracker(commands.Cog):
             await db.execute("DELETE FROM message_daily_stats WHERE guild_id = ?", (guild_id,))
             await db.commit()
 
-        card = BreezeSuccessContainer("Server Reset Successful", "🗑️ Successfully cleared all server chat activity statistics and historical charts.")
+        card = KINETICHOSTSuccessContainer("Server Reset Successful", "🗑️ Successfully cleared all server chat activity statistics and historical charts.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
 async def setup(bot: commands.Bot):

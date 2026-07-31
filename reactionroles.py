@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 from typing import Optional, Dict, Set
 
 import discord
@@ -7,15 +7,15 @@ from discord import app_commands
 from discord.ext import commands
 
 from ui import (
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeInfoContainer,
-    BreezeWarningContainer,
-    BreezeContainerBuilder
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTInfoContainer,
+    KINETICHOSTWarningContainer,
+    KINETICHOSTContainerBuilder
 )
 
-logger = logging.getLogger("Breeze.ReactionRoles")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.ReactionRoles")
+DB_PATH = "kinetichost.db"
 
 # ══════════════════════════════════════════════════════════════════════
 def build_panel_embed(title: str, description: Optional[str], mappings: dict, guild: discord.Guild, multi_role: bool) -> discord.Embed:
@@ -156,7 +156,7 @@ class ReactionRoles(commands.Cog):
     # SLASH COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    reactionroles = app_commands.Group(name="reactionroles", description="Breeze emoji-based reaction role panels settings", default_permissions=discord.Permissions(administrator=True))
+    reactionroles = app_commands.Group(name="reactionroles", description="KINETICHOST emoji-based reaction role panels settings", default_permissions=discord.Permissions(administrator=True))
 
     @reactionroles.command(name="create", description="Create a new reaction roles panel message")
     async def reaction_roles_create(self, interaction: discord.Interaction, channel: discord.TextChannel, title: str, description: Optional[str] = None, multi_role: bool = True):
@@ -165,7 +165,7 @@ class ReactionRoles(commands.Cog):
         # Pre-check permissions
         err = self.check_permissions(interaction, channel)
         if err:
-            card = BreezeErrorContainer("Missing Bot Permissions", err)
+            card = KINETICHOSTErrorContainer("Missing Bot Permissions", err)
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -174,7 +174,7 @@ class ReactionRoles(commands.Cog):
         try:
             panel_msg = await channel.send(embed=embed)
         except Exception as e:
-            card = BreezeErrorContainer("Send Message Failed", f"Failed to send panel embed: {e}")
+            card = KINETICHOSTErrorContainer("Send Message Failed", f"Failed to send panel embed: {e}")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -199,7 +199,7 @@ class ReactionRoles(commands.Cog):
         }
         self.mappings_cache[msg_id] = {}
 
-        card = BreezeSuccessContainer(
+        card = KINETICHOSTSuccessContainer(
             "Panel Created Successfully",
             f"Panel sent to {channel.mention}.\n"
             f"**Message ID:** `{msg_id}`\n\n"
@@ -215,7 +215,7 @@ class ReactionRoles(commands.Cog):
         
         # 1. Verify that message_id is a registered panel
         if message_id not in self.panels_cache:
-            card = BreezeErrorContainer("Panel Not Found", f"No registered reaction role panel exists with Message ID `{message_id}`.")
+            card = KINETICHOSTErrorContainer("Panel Not Found", f"No registered reaction role panel exists with Message ID `{message_id}`.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -223,11 +223,11 @@ class ReactionRoles(commands.Cog):
         
         # 2. Check Role Hierarchy
         if role >= guild.me.top_role:
-            card = BreezeErrorContainer("Hierarchy Alert", f"❌ Cannot assign {role.mention} because it is equal or higher than Breeze's top role.")
+            card = KINETICHOSTErrorContainer("Hierarchy Alert", f"❌ Cannot assign {role.mention} because it is equal or higher than KINETICHOST's top role.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
         if role >= interaction.user.top_role and not interaction.guild.owner == interaction.user:
-            card = BreezeErrorContainer("Hierarchy Alert", f"❌ Cannot assign {role.mention} because it is equal or higher than your highest role.")
+            card = KINETICHOSTErrorContainer("Hierarchy Alert", f"❌ Cannot assign {role.mention} because it is equal or higher than your highest role.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -235,7 +235,7 @@ class ReactionRoles(commands.Cog):
         try:
             parsed_emoji = discord.PartialEmoji.from_str(emoji)
         except Exception:
-            card = BreezeErrorContainer("Invalid Emoji", f"Could not parse `{emoji}`. Make sure it is a valid unicode emoji or custom server emoji.")
+            card = KINETICHOSTErrorContainer("Invalid Emoji", f"Could not parse `{emoji}`. Make sure it is a valid unicode emoji or custom server emoji.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -243,25 +243,25 @@ class ReactionRoles(commands.Cog):
             # Check if bot can access custom emoji
             custom_emoji = self.bot.get_emoji(parsed_emoji.id)
             if not custom_emoji:
-                card = BreezeErrorContainer("Inaccessible Emoji", f"❌ Custom emoji `{emoji}` is not accessible to Breeze. Emojis must belong to a server the bot is present in.")
+                card = KINETICHOSTErrorContainer("Inaccessible Emoji", f"❌ Custom emoji `{emoji}` is not accessible to KINETICHOST. Emojis must belong to a server the bot is present in.")
                 await interaction.followup.send(view=card.build(), ephemeral=True)
                 return
 
         # Fetch message and test if bot can react to validate standard unicode emoji
         ch = guild.get_channel(int(panel["channel_id"]))
         if not ch:
-            card = BreezeErrorContainer("Channel Not Found", "The channel containing this panel no longer exists.")
+            card = KINETICHOSTErrorContainer("Channel Not Found", "The channel containing this panel no longer exists.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
         try:
             message = await ch.fetch_message(int(message_id))
         except discord.NotFound:
-            card = BreezeErrorContainer("Message Not Found", "The panel message was not found or has been deleted.")
+            card = KINETICHOSTErrorContainer("Message Not Found", "The panel message was not found or has been deleted.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
         except discord.Forbidden:
-            card = BreezeErrorContainer("Forbidden", "Breeze does not have access permissions to view the target channel.")
+            card = KINETICHOSTErrorContainer("Forbidden", "KINETICHOST does not have access permissions to view the target channel.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -270,7 +270,7 @@ class ReactionRoles(commands.Cog):
         try:
             await message.add_reaction(parsed_emoji)
         except discord.HTTPException as e:
-            card = BreezeErrorContainer("Validation Failed", f"❌ Discord rejected reaction using `{emoji}`. Check if it is a valid standard emoji.\nError: `{e}`")
+            card = KINETICHOSTErrorContainer("Validation Failed", f"❌ Discord rejected reaction using `{emoji}`. Check if it is a valid standard emoji.\nError: `{e}`")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -297,7 +297,7 @@ class ReactionRoles(commands.Cog):
         )
         await message.edit(embed=updated_embed, view=None)
 
-        card = BreezeSuccessContainer("Mapping Registered", f"Reacting with {emoji_key} will now grant the role {role.mention}.")
+        card = KINETICHOSTSuccessContainer("Mapping Registered", f"Reacting with {emoji_key} will now grant the role {role.mention}.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @reactionroles.command(name="remove", description="Remove an emoji reaction mapping from a role panel")
@@ -307,7 +307,7 @@ class ReactionRoles(commands.Cog):
         guild_id = str(guild.id)
         
         if message_id not in self.panels_cache:
-            card = BreezeErrorContainer("Panel Not Found", f"No panel registered with Message ID `{message_id}`.")
+            card = KINETICHOSTErrorContainer("Panel Not Found", f"No panel registered with Message ID `{message_id}`.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -316,14 +316,14 @@ class ReactionRoles(commands.Cog):
         try:
             parsed_emoji = discord.PartialEmoji.from_str(emoji)
         except Exception:
-            card = BreezeErrorContainer("Invalid Emoji", "Could not parse emoji string.")
+            card = KINETICHOSTErrorContainer("Invalid Emoji", "Could not parse emoji string.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
         emoji_key = str(parsed_emoji)
         mappings = self.mappings_cache.get(message_id, {})
         if emoji_key not in mappings:
-            card = BreezeErrorContainer("Mapping Not Found", f"No role mapped to `{emoji_key}` on this panel.")
+            card = KINETICHOSTErrorContainer("Mapping Not Found", f"No role mapped to `{emoji_key}` on this panel.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -367,7 +367,7 @@ class ReactionRoles(commands.Cog):
             except Exception as e:
                 logger.warning(f"[ReactionRoles] Failed to clean up reaction on message {message_id}: {e}")
 
-        card = BreezeSuccessContainer("Mapping Removed", f"Successfully cleared role mapping for {emoji_key}.")
+        card = KINETICHOSTSuccessContainer("Mapping Removed", f"Successfully cleared role mapping for {emoji_key}.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     @reactionroles.command(name="list", description="Show all configured emoji mappings for a role panel")
@@ -376,14 +376,14 @@ class ReactionRoles(commands.Cog):
         guild = interaction.guild
         
         if message_id not in self.panels_cache:
-            card = BreezeErrorContainer("Panel Not Found", f"No panel registered with Message ID `{message_id}`.")
+            card = KINETICHOSTErrorContainer("Panel Not Found", f"No panel registered with Message ID `{message_id}`.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
         panel = self.panels_cache[message_id]
         mappings = self.mappings_cache.get(message_id, {})
 
-        builder = BreezeContainerBuilder(f"Reaction Roles List: {panel['title']}", "Visual settings configuration overview.")
+        builder = KINETICHOSTContainerBuilder(f"Reaction Roles List: {panel['title']}", "Visual settings configuration overview.")
         
         info_text = (
             f"• **Panel Message ID:** `{message_id}`\n"
@@ -412,7 +412,7 @@ class ReactionRoles(commands.Cog):
         guild = interaction.guild
         
         if message_id not in self.panels_cache:
-            card = BreezeErrorContainer("Panel Not Found", "No panel registered with that Message ID.")
+            card = KINETICHOSTErrorContainer("Panel Not Found", "No panel registered with that Message ID.")
             await interaction.followup.send(view=card.build(), ephemeral=True)
             return
 
@@ -430,7 +430,7 @@ class ReactionRoles(commands.Cog):
         # Atomic database cleanup
         await self.delete_panel_data(message_id)
 
-        card = BreezeSuccessContainer("Panel Deleted", "🗑️ Successfully deleted panel message, cleared mappings cache, and removed SQL records.")
+        card = KINETICHOSTSuccessContainer("Panel Deleted", "🗑️ Successfully deleted panel message, cleared mappings cache, and removed SQL records.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
     # ══════════════════════════════════════════════════════════════════════
@@ -501,7 +501,7 @@ class ReactionRoles(commands.Cog):
                 
                 if other_roles_to_remove:
                     try:
-                        await member.remove_roles(*other_roles_to_remove, reason="Breeze Reaction Role Unique Mode Toggle")
+                        await member.remove_roles(*other_roles_to_remove, reason="KINETICHOST Reaction Role Unique Mode Toggle")
                     except Exception as e:
                         logger.error(f"[ReactionRoles] Failed to remove unique roles: {e}")
 
@@ -519,7 +519,7 @@ class ReactionRoles(commands.Cog):
 
             # Assign Role
             try:
-                await member.add_roles(role, reason="Breeze Reaction Role Assignment")
+                await member.add_roles(role, reason="KINETICHOST Reaction Role Assignment")
                 logger.info(f"[ReactionRoles] Assigned role {role.id} to user {member.id} in guild {guild.id}")
             except Exception as e:
                 logger.error(f"[ReactionRoles] Failed to assign role {role.id} to {member.id}: {e}")
@@ -573,7 +573,7 @@ class ReactionRoles(commands.Cog):
 
             # Remove Role
             try:
-                await member.remove_roles(role, reason="Breeze Reaction Role Removal")
+                await member.remove_roles(role, reason="KINETICHOST Reaction Role Removal")
                 logger.info(f"[ReactionRoles] Removed role {role.id} from user {member.id} in guild {guild.id}")
             except Exception as e:
                 logger.error(f"[ReactionRoles] Failed to remove role {role.id} from {member.id}: {e}")

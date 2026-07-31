@@ -1,4 +1,4 @@
-import re
+﻿import re
 import random
 import logging
 from datetime import datetime
@@ -10,14 +10,14 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from ui import (
-    BreezeContainerBuilder,
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeWarningContainer,
-    BreezeInfoContainer
+    KINETICHOSTContainerBuilder,
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTWarningContainer,
+    KINETICHOSTInfoContainer
 )
 
-logger = logging.getLogger("Breeze.Leveling")
+logger = logging.getLogger("KINETICHOST.Leveling")
 DB_PATH = "fb.db"
 
 class Leveling(commands.Cog):
@@ -265,7 +265,7 @@ class Leveling(commands.Cog):
                 return  # Could not fetch/find channel, bot has no access or it was deleted
 
         # Components V2 Announcement message
-        builder = BreezeContainerBuilder(
+        builder = KINETICHOSTContainerBuilder(
             title="🎉 Level Up!",
             description=f"Congratulations {message.author.mention}!",
             accent_color=3066993,
@@ -297,7 +297,7 @@ class Leveling(commands.Cog):
         elif isinstance(error, app_commands.CommandOnCooldown):
             msg = f"⏳ Command is on cooldown. Try again in `{error.retry_after:.1f}s`."
             
-        err_card = BreezeErrorContainer("Command Execution Failed", msg)
+        err_card = KINETICHOSTErrorContainer("Command Execution Failed", msg)
         try:
             if not interaction.response.is_done():
                 await interaction.response.send_message(view=err_card.build(), ephemeral=True)
@@ -317,7 +317,7 @@ class Leveling(commands.Cog):
         
         target = member or interaction.user
         if target.bot:
-            err = BreezeErrorContainer("Invalid User", "Bots do not earn XP or have ranks.")
+            err = KINETICHOSTErrorContainer("Invalid User", "Bots do not earn XP or have ranks.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -335,7 +335,7 @@ class Leveling(commands.Cog):
         total_messages = data["total_messages"]
         xp_needed = 5 * level**2 + 50 * level + 100
 
-        builder = BreezeContainerBuilder(
+        builder = KINETICHOSTContainerBuilder(
             title="Rank Details",
             description=f"Leveling statistics for {target.mention}",
             accent_color=3447003,
@@ -366,7 +366,7 @@ class Leveling(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            info = BreezeInfoContainer("Leaderboard", "No users have earned XP yet.")
+            info = KINETICHOSTInfoContainer("Leaderboard", "No users have earned XP yet.")
             await interaction.followup.send(view=info.build(), ephemeral=True)
             return
 
@@ -388,7 +388,7 @@ class Leveling(commands.Cog):
 
         leaderboard_text = "\n".join(leaderboard_lines)
 
-        builder = BreezeContainerBuilder(
+        builder = KINETICHOSTContainerBuilder(
             title="Server Leaderboard",
             description=f"Top 10 highest-level users in **{interaction.guild.name}**",
             accent_color=3447003
@@ -401,7 +401,7 @@ class Leveling(commands.Cog):
     # ADMIN CONFIG SLASH COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    level = app_commands.Group(name="level", description="Breeze Leveling configuration and settings")
+    level = app_commands.Group(name="level", description="KINETICHOST Leveling configuration and settings")
 
     @level.command(name="setup", description="Sets the level-up announcement channel")
     @app_commands.describe(channel="The channel where level-up notifications will be announced")
@@ -422,7 +422,7 @@ class Leveling(commands.Cog):
         # Evict cache
         self.settings_cache.pop(guild_id, None)
 
-        card = BreezeSuccessContainer(
+        card = KINETICHOSTSuccessContainer(
             title="Setup Completed",
             description=f"Level-up announcements have been set to {channel.mention}."
         )
@@ -445,7 +445,7 @@ class Leveling(commands.Cog):
         # Evict cache
         self.settings_cache.pop(guild_id, None)
 
-        card = BreezeSuccessContainer(
+        card = KINETICHOSTSuccessContainer(
             title="Announcements Disabled",
             description="Level-up announcements have been disabled."
         )
@@ -468,7 +468,7 @@ class Leveling(commands.Cog):
         # Evict cache
         self.settings_cache.pop(guild_id, None)
 
-        card = BreezeSuccessContainer(
+        card = KINETICHOSTSuccessContainer(
             title="System Enabled",
             description="The leveling system has been enabled for this server."
         )
@@ -489,7 +489,7 @@ class Leveling(commands.Cog):
         ann_channel_id = settings["announcement_channel_id"]
         announcement_channel = f"<#{ann_channel_id}>" if ann_channel_id else "❌ Disabled"
 
-        builder = BreezeContainerBuilder(
+        builder = KINETICHOSTContainerBuilder(
             title="⚙️ Leveling Settings",
             description=f"Configuration for **{interaction.guild.name}**",
             accent_color=3447003

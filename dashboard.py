@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import logging
 from typing import Optional
 
@@ -10,20 +10,20 @@ from discord.ui import Button
 
 import ui
 from ui import (
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeWarningContainer,
-    BreezeInfoContainer
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTWarningContainer,
+    KINETICHOSTInfoContainer
 )
 
-logger = logging.getLogger("Breeze.Dashboard")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.Dashboard")
+DB_PATH = "kinetichost.db"
 
 class Dashboard(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="dashboard", description="Open the Breeze Server Control Panel Dashboard")
+    @app_commands.command(name="dashboard", description="Open the KINETICHOST Server Control Panel Dashboard")
     @app_commands.checks.has_permissions(administrator=True)
     async def open_dashboard(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -67,8 +67,8 @@ class Dashboard(commands.Cog):
         sug_rate = (suggestions_approved / suggestions_count * 100) if suggestions_count > 0 else 0.0
 
         # 2. Build Dashboard Layout
-        dash = BreezeInfoContainer(
-            "Breeze Management Dashboard",
+        dash = KINETICHOSTInfoContainer(
+            "KINETICHOST Management Dashboard",
             f"💻 **Administrative control panel for server {guild.name}**"
         )
         
@@ -101,9 +101,9 @@ class Dashboard(commands.Cog):
         )
 
         # Quick Links/Settings Help Buttons
-        btn_rev = Button(label="Reviews Info", style=discord.ButtonStyle.secondary, custom_id="breeze:dash:help:reviews")
-        btn_sug = Button(label="Suggestions Info", style=discord.ButtonStyle.secondary, custom_id="breeze:dash:help:suggestions")
-        btn_wel = Button(label="Welcome Info", style=discord.ButtonStyle.secondary, custom_id="breeze:dash:help:welcome")
+        btn_rev = Button(label="Reviews Info", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:dash:help:reviews")
+        btn_sug = Button(label="Suggestions Info", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:dash:help:suggestions")
+        btn_wel = Button(label="Welcome Info", style=discord.ButtonStyle.secondary, custom_id="KINETICHOST:dash:help:welcome")
         
         async def help_callback(help_interaction: discord.Interaction):
             await help_interaction.response.defer(ephemeral=True)
@@ -135,7 +135,7 @@ class Dashboard(commands.Cog):
             else:
                 msg = "No help details found."
                 
-            info = BreezeInfoContainer(f"{module.title()} Setup Help", msg)
+            info = KINETICHOSTInfoContainer(f"{module.title()} Setup Help", msg)
             await help_interaction.followup.send(view=info.build(), ephemeral=True)
             
         btn_rev.callback = help_callback

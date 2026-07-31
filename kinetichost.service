@@ -1,12 +1,12 @@
 [Unit]
-Description=Breeze Discord Bot Service
+Description=KineticHost Discord Bot Service
 After=network.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/cynexbot
-ExecStart=/root/cynexbot/venv/bin/python bot.py
+WorkingDirectory=/opt/kinetichost
+ExecStart=/opt/kinetichost/venv/bin/python bot.py
 Restart=always
 RestartSec=5
 

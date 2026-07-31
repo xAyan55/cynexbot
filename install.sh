@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-# CynexBot 1-Click Installer
+# KineticHost 1-Click Installer
 # Installs python, git, sets up a virtual environment, configures systemd, and starts the bot.
 
-INSTALL_DIR="/opt/cynexbot"
+INSTALL_DIR="/opt/kinetichost"
 REPO_URL="https://github.com/xAyan55/cynexbot.git"
 
 echo "=========================================="
-echo "          CynexBot Installer              "
+echo "          KineticHost Installer              "
 echo "=========================================="
 
 # Check if running as root
@@ -57,33 +57,33 @@ fi
 
 # 5. Configure systemd service
 echo "[5/5] Configuring systemd service..."
-if [ -f "breeze.service" ]; then
-  cp breeze.service /etc/systemd/system/breeze.service
+if [ -f "kinetichost.service" ]; then
+  cp kinetichost.service /etc/systemd/system/kinetichost.service
   
   # Dynamically replace WorkingDirectory and ExecStart to match the installation path
-  sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|" /etc/systemd/system/breeze.service
-  sed -i "s|ExecStart=.*|ExecStart=$INSTALL_DIR/venv/bin/python bot.py|" /etc/systemd/system/breeze.service
+  sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|" /etc/systemd/system/kinetichost.service
+  sed -i "s|ExecStart=.*|ExecStart=$INSTALL_DIR/venv/bin/python bot.py|" /etc/systemd/system/kinetichost.service
   
   systemctl daemon-reload
-  systemctl enable breeze.service
+  systemctl enable kinetichost.service
   
   # Start or restart bot if token is present
   if [ -f "token.txt" ] && [ -s "token.txt" ]; then
-    echo "Starting CynexBot service..."
-    systemctl restart breeze.service
+    echo "Starting KineticHost service..."
+    systemctl restart kinetichost.service
     echo "Checking status..."
-    systemctl status breeze.service --no-pager -n 5
+    systemctl status kinetichost.service --no-pager -n 5
     echo "=========================================="
-    echo " CynexBot installed and started successfully!"
+    echo " KineticHost installed and started successfully!"
     echo "=========================================="
   else
     echo "=========================================="
     echo " Installation complete!"
     echo " Please put your token in $INSTALL_DIR/token.txt"
-    echo " Then start the bot with: systemctl start breeze"
+    echo " Then start the bot with: systemctl start kinetichost"
     echo "=========================================="
   fi
 else
-  echo "Error: breeze.service not found in repository. Service setup failed."
+  echo "Error: kinetichost.service not found in repository. Service setup failed."
   exit 1
 fi

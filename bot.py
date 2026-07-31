@@ -41,27 +41,29 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
-logger = logging.getLogger("Breeze")
+logger = logging.getLogger("KineticHost")
 
-DB_PATH = "breeze.db"
+DB_PATH = "kinetichost.db"
 
-# Auto-migrate database from cynex.db to breeze.db if it exists
+# Auto-migrate database from old names to kinetichost.db if they exist
 import shutil
 import os
-if os.path.exists("cynex.db") and not os.path.exists("breeze.db"):
-    try:
-        shutil.copy("cynex.db", "breeze.db")
-        logger.info("Auto-migrated database from cynex.db to breeze.db successfully.")
-    except Exception as e:
-        logger.error(f"Failed to migrate cynex.db to breeze.db: {e}")
+for old_db in ("breeze.db", "cynex.db"):
+    if os.path.exists(old_db) and not os.path.exists("kinetichost.db"):
+        try:
+            shutil.copy(old_db, "kinetichost.db")
+            logger.info(f"Auto-migrated database from {old_db} to kinetichost.db successfully.")
+        except Exception as e:
+            logger.error(f"Failed to migrate {old_db} to kinetichost.db: {e}")
+        break
 
 
-class BreezeBot(commands.Bot):
+class KineticBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True  # Required to capture message transcripts
         intents.members = True          # Required for welcome system events
-        super().__init__(command_prefix="breeze!", intents=intents)
+        super().__init__(command_prefix="kinetic!", intents=intents)
         self.start_time = datetime.now()
 
     async def setup_hook(self):
@@ -94,14 +96,14 @@ class BreezeBot(commands.Bot):
         await self.tree.sync()
         logger.info("Command tree synced globally.")
 
-bot = BreezeBot()
+bot = KineticBot()
 
 # ══════════════════════════════════════════════════════════════════════
-# DATABASE OPERATIONS (breeze.db)
+# DATABASE OPERATIONS (kinetichost.db)
 # ══════════════════════════════════════════════════════════════════════
 
 async def init_db():
-    """Initializes SQLite tables in breeze.db if they do not exist."""
+    """Initializes SQLite tables in kinetichost.db if they do not exist."""
     import aiosqlite
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL")
@@ -1072,7 +1074,7 @@ class BuilderView(discord.ui.View):
         if self.message:
             try:
                 embed = discord.Embed(
-                    title="⌛ Breeze Builder (Timed Out) ⌛",
+                    title="⌛ KINETICHOST Builder (Timed Out) ⌛",
                     description="This building session timed out due to inactivity. Progress saved as draft. Run `/container builder` to recover.",
                     color=discord.Color.red()
                 )
@@ -1522,7 +1524,7 @@ def make_builder_embed(user_id: str, components: List[dict], container_props: di
     remaining = 40 - count
     
     embed = discord.Embed(
-        title="⚡ Breeze Container Builder ⚡",
+        title="⚡ KINETICHOST Container Builder ⚡",
         description="Build professional Discord Components V2 layouts interactively.",
         color=discord.Color.blurple()
     )
@@ -1554,7 +1556,7 @@ def make_builder_embed(user_id: str, components: List[dict], container_props: di
         inline=False
     )
     
-    embed.set_footer(text="Breeze V2 Builder • Multi-user • Autosaved")
+    embed.set_footer(text="KINETICHOST V2 Builder • Multi-user • Autosaved")
     return embed
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1563,7 +1565,7 @@ def make_builder_embed(user_id: str, components: List[dict], container_props: di
 
 class ContainerGroup(app_commands.Group, name="container"):
     def __init__(self, bot):
-        super().__init__(description="Breeze Container commands")
+        super().__init__(description="KINETICHOST Container commands")
         self.bot = bot
         
     @app_commands.command(name="builder", description="Open the visual Components V2 Container Builder")
@@ -1574,7 +1576,7 @@ class ContainerGroup(app_commands.Group, name="container"):
         if db_session:
             view = DraftPromptView(user_id, db_session)
             embed = discord.Embed(
-                title="📦 Breeze Unsaved Draft Found",
+                title="📦 KINETICHOST Unsaved Draft Found",
                 description="You have an unsaved container draft. Would you like to restore it or start fresh?",
                 color=discord.Color.orange()
             )

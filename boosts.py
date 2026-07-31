@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -8,15 +8,15 @@ from discord import app_commands
 from discord.ext import commands
 
 from ui import (
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeInfoContainer,
-    BreezeWarningContainer,
-    BreezePaginationContainer
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTInfoContainer,
+    KINETICHOSTWarningContainer,
+    KINETICHOSTPaginationContainer
 )
 
-logger = logging.getLogger("Breeze.BoostTracker")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.BoostTracker")
+DB_PATH = "kinetichost.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # DATABASE OPERATIONS FOR BOOSTS
@@ -75,7 +75,7 @@ class BoostTracker(commands.Cog):
                 # Send announcement
                 ch = guild.get_channel(int(config["channel_id"])) if config["channel_id"] else None
                 if ch:
-                    alert = BreezeInfoContainer(
+                    alert = KINETICHOSTInfoContainer(
                         "🎉 Server Boosted!",
                         f"Thank you so much to {after.mention} for boosting our server! ❤️\n"
                         f"We now have **{guild.premium_subscription_count}** boosts!"
@@ -90,7 +90,7 @@ class BoostTracker(commands.Cog):
                     role = guild.get_role(int(config["role_id"]))
                     if role and guild.me.guild_permissions.manage_roles and role < guild.me.top_role:
                         try:
-                            await after.add_roles(role, reason="Breeze Booster Alert thank-you assignment")
+                            await after.add_roles(role, reason="KINETICHOST Booster Alert thank-you assignment")
                         except Exception as e:
                             logger.error(f"[BoostTracker] Failed to add thank-you role {role.id} to booster {user_id}: {e}")
 
@@ -111,7 +111,7 @@ class BoostTracker(commands.Cog):
             if config:
                 ch = guild.get_channel(int(config["channel_id"])) if config["channel_id"] else None
                 if ch:
-                    alert = BreezeWarningContainer(
+                    alert = KINETICHOSTWarningContainer(
                         "💔 Server Boost Removed",
                         f"{after.mention} is no longer boosting. We now have **{guild.premium_subscription_count}** boosts."
                     )
@@ -125,7 +125,7 @@ class BoostTracker(commands.Cog):
                     role = guild.get_role(int(config["role_id"]))
                     if role and guild.me.guild_permissions.manage_roles and role < guild.me.top_role:
                         try:
-                            await after.remove_roles(role, reason="Breeze Booster Alert thank-you removal")
+                            await after.remove_roles(role, reason="KINETICHOST Booster Alert thank-you removal")
                         except Exception as e:
                             logger.error(f"[BoostTracker] Failed to remove thank-you role {role.id} from former booster {user_id}: {e}")
 
@@ -152,7 +152,7 @@ class BoostTracker(commands.Cog):
 
                     ch = after.get_channel(int(config["channel_id"])) if config["channel_id"] else None
                     if ch:
-                        alert = BreezeSuccessContainer(
+                        alert = KINETICHOSTSuccessContainer(
                             "🚀 Server Tier Upgraded!",
                             f"Congratulations! Our server premium tier has upgraded to **Level {after.premium_tier}**!\n"
                             f"We currently have **{after.premium_subscription_count}** total boosts!\n"
@@ -167,7 +167,7 @@ class BoostTracker(commands.Cog):
                 elif after.premium_tier < before.premium_tier:
                     ch = after.get_channel(int(config["channel_id"])) if config["channel_id"] else None
                     if ch:
-                        alert = BreezeWarningContainer(
+                        alert = KINETICHOSTWarningContainer(
                             "⚠️ Server Tier Downgraded",
                             f"Our server premium tier has dropped to **Level {after.premium_tier}** due to a boost removal.\n"
                             f"We currently have **{after.premium_subscription_count}** boosts remaining."
@@ -188,7 +188,7 @@ class BoostTracker(commands.Cog):
     # SLASH COMMANDS
     # ══════════════════════════════════════════════════════════════════════
 
-    boostalerts = app_commands.Group(name="boostalerts", description="Breeze Server Boost Alert Settings", default_permissions=discord.Permissions(administrator=True))
+    boostalerts = app_commands.Group(name="boostalerts", description="KINETICHOST Server Boost Alert Settings", default_permissions=discord.Permissions(administrator=True))
 
     @boostalerts.command(name="setup", description="Configure server boost announcements channel and thank-you role")
     async def boostalerts_setup(self, interaction: discord.Interaction, channel: discord.TextChannel, role: Optional[discord.Role] = None):
@@ -199,11 +199,11 @@ class BoostTracker(commands.Cog):
         # Validate bot manage roles permission if role is specified
         if role:
             if not interaction.guild.me.guild_permissions.manage_roles:
-                card = BreezeErrorContainer("Missing Bot Permissions", "❌ Breeze requires **Manage Roles** permission to assign the thank-you role.")
+                card = KINETICHOSTErrorContainer("Missing Bot Permissions", "❌ KINETICHOST requires **Manage Roles** permission to assign the thank-you role.")
                 await interaction.followup.send(view=card.build(), ephemeral=True)
                 return
             if role >= interaction.guild.me.top_role:
-                card = BreezeErrorContainer("Invalid Role", f"❌ Role {role.mention} is higher than Breeze's highest role. Please move Breeze's role above it in Server Settings.")
+                card = KINETICHOSTErrorContainer("Invalid Role", f"❌ Role {role.mention} is higher than KINETICHOST's highest role. Please move KINETICHOST's role above it in Server Settings.")
                 await interaction.followup.send(view=card.build(), ephemeral=True)
                 return
 
@@ -218,7 +218,7 @@ class BoostTracker(commands.Cog):
             await db.commit()
 
         role_mention = role.mention if role else "`None`"
-        card = BreezeSuccessContainer(
+        card = KINETICHOSTSuccessContainer(
             "Boost Alerts Configured",
             f"Announcements will be posted to {channel.mention}.\n"
             f"Thank-you role to assign: {role_mention}"
@@ -234,10 +234,10 @@ class BoostTracker(commands.Cog):
             await db.execute("DELETE FROM boost_alert_configs WHERE guild_id = ?", (guild_id,))
             await db.commit()
 
-        card = BreezeSuccessContainer("Boost Alerts Disabled", "Server boost alert announcements have been successfully **disabled**.")
+        card = KINETICHOSTSuccessContainer("Boost Alerts Disabled", "Server boost alert announcements have been successfully **disabled**.")
         await interaction.followup.send(view=card.build(), ephemeral=True)
 
-    boost = app_commands.Group(name="boost", description="Breeze Server Booster stats and records")
+    boost = app_commands.Group(name="boost", description="KINETICHOST Server Booster stats and records")
 
     @boost.command(name="stats", description="Display current guild server boost tier, counts, and stats")
     async def boost_stats(self, interaction: discord.Interaction):
@@ -265,7 +265,7 @@ class BoostTracker(commands.Cog):
             f"• **Active Boosters Count**: `{active_boosters}` members\n"
             f"• **Total Historical Boosters**: `{total_historical_boosters}` members"
         )
-        card = BreezeInfoContainer(f"Boost Statistics for {guild.name}", desc)
+        card = KINETICHOSTInfoContainer(f"Boost Statistics for {guild.name}", desc)
         await interaction.followup.send(view=card.build())
 
     @boost.command(name="leaderboard", description="Display leaderboard of top boosters sorted by boost duration")
@@ -284,7 +284,7 @@ class BoostTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = BreezeInfoContainer("Booster Leaderboard", "*There are currently no active boosters logged on this server.*")
+            card = KINETICHOSTInfoContainer("Booster Leaderboard", "*There are currently no active boosters logged on this server.*")
             await interaction.followup.send(view=card.build())
             return
 
@@ -317,7 +317,7 @@ class BoostTracker(commands.Cog):
                 "sections": page_sections
             })
 
-        paginator = BreezePaginationContainer("Server Booster Leaderboard", pages, interaction.user.id)
+        paginator = KINETICHOSTPaginationContainer("Server Booster Leaderboard", pages, interaction.user.id)
         await interaction.followup.send(view=paginator)
 
     @boost.command(name="history", description="Check server boost actions history for a specific member")
@@ -337,7 +337,7 @@ class BoostTracker(commands.Cog):
                 rows = await c.fetchall()
 
         if not rows:
-            card = BreezeInfoContainer("Booster History", f"No boost activity logs found for {member.name}.")
+            card = KINETICHOSTInfoContainer("Booster History", f"No boost activity logs found for {member.name}.")
             await interaction.followup.send(view=card.build())
             return
 
@@ -355,7 +355,7 @@ class BoostTracker(commands.Cog):
             lines.append(f"{emoji} **{action_text}** — {time_str}")
 
         desc = "\n".join(lines)
-        card = BreezeInfoContainer(f"Boost History for {member.name}", desc)
+        card = KINETICHOSTInfoContainer(f"Boost History for {member.name}", desc)
         await interaction.followup.send(view=card.build())
 
 async def setup(bot: commands.Bot):

@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -20,15 +20,15 @@ from discord.ui import (
 
 import ui
 from ui import (
-    BreezeContainerBuilder,
-    BreezeSuccessContainer,
-    BreezeErrorContainer,
-    BreezeWarningContainer,
-    BreezeInfoContainer
+    KINETICHOSTContainerBuilder,
+    KINETICHOSTSuccessContainer,
+    KINETICHOSTErrorContainer,
+    KINETICHOSTWarningContainer,
+    KINETICHOSTInfoContainer
 )
 
-logger = logging.getLogger("Breeze.Welcome")
-DB_PATH = "breeze.db"
+logger = logging.getLogger("KINETICHOST.Welcome")
+DB_PATH = "kinetichost.db"
 
 # ══════════════════════════════════════════════════════════════════════
 # WELCOME VARIABLE HELPER
@@ -143,7 +143,7 @@ async def translate_welcome_variables(text: str, member: discord.Member) -> str:
 
 async def on_interaction(interaction: discord.Interaction):
     custom_id = interaction.data.get("custom_id") if interaction.data else None
-    if not custom_id or not custom_id.startswith("breeze:welcome:"):
+    if not custom_id or not custom_id.startswith("KINETICHOST:welcome:"):
         return
 
     action = custom_id.split(":")[2]
@@ -155,28 +155,28 @@ async def on_interaction(interaction: discord.Interaction):
                 row = await cursor.fetchone()
                 
         rules_text = row[0] if row and row[0] else "📜 Please check the server rules channels for details."
-        info = BreezeInfoContainer("Server Rules", rules_text)
+        info = KINETICHOSTInfoContainer("Server Rules", rules_text)
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "support":
         # Check if tickets system is loaded
         tickets_cog = interaction.client.get_cog("TicketGroup") # app commands group is not a Cog, tickets is usually registered
         # We can send information about tickets
-        info = BreezeInfoContainer(
-            "Breeze Help Desk Support",
+        info = KINETICHOSTInfoContainer(
+            "KINETICHOST Help Desk Support",
             "🎫 Need assistance? Run the `/ticket panel` or `/ticket setup` command to contact staff."
         )
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "website":
-        info = BreezeInfoContainer(
-            "Breeze Web Portal",
-            "🌐 Visit our official web site at: **https://breeze.dev**"
+        info = KINETICHOSTInfoContainer(
+            "KINETICHOST Web Portal",
+            "🌐 Visit our official web site at: **https://KINETICHOST.dev**"
         )
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "announce":
-        info = BreezeInfoContainer(
+        info = KINETICHOSTInfoContainer(
             "📢 Server Announcements",
             "To stay updated, check our announcement channels and enable notifications!"
         )
@@ -305,7 +305,7 @@ class Welcome(commands.Cog):
                 pass
             if log_ch:
                 try:
-                    log_layout = BreezeInfoContainer(
+                    log_layout = KINETICHOSTInfoContainer(
                         "Member Joined",
                         f"👤 {member.mention} (`{member.name}` / `{member.id}`)\n"
                         f"• Account: <t:{int(member.created_at.timestamp())}:F>\n"
@@ -322,7 +322,7 @@ class Welcome(commands.Cog):
                 role = member.guild.get_role(int(role_id))
                 if role:
                     try:
-                        await member.add_roles(role, reason="Breeze Welcome Auto-Role Assignment")
+                        await member.add_roles(role, reason="KINETICHOST Welcome Auto-Role Assignment")
                     except Exception as role_err:
                         logger.warning(f"Failed to assign auto-role {role_id} to {member}: {role_err}")
 
@@ -347,8 +347,8 @@ class Welcome(commands.Cog):
         welcome_txt = settings["welcome_message"] or default_welcome
         translated_msg = await translate_welcome_variables(welcome_txt, member)
 
-        # Build V2 Welcome Layout View using BreezeContainerBuilder
-        builder = BreezeContainerBuilder(
+        # Build V2 Welcome Layout View using KINETICHOSTContainerBuilder
+        builder = KINETICHOSTContainerBuilder(
             title=f"Welcome to {member.guild.name}",
             accent_color=3447003,
             thumbnail_url=member.display_avatar.url if member.display_avatar else None
@@ -357,10 +357,10 @@ class Welcome(commands.Cog):
         builder.add_section("Member Information", f"You are member number **{member.guild.member_count}**.")
         builder.add_section("Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
         
-        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{member.id}")
-        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{member.id}")
-        btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{member.id}")
-        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{member.id}")
+        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:rules:{member.id}")
+        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:support:{member.id}")
+        btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:website:{member.id}")
+        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:announce:{member.id}")
         builder.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
         
         welcome_layout = builder.build()
@@ -423,7 +423,7 @@ class Welcome(commands.Cog):
                 pass
             if log_ch:
                 try:
-                    log_layout = BreezeWarningContainer(
+                    log_layout = KINETICHOSTWarningContainer(
                         "Member Left",
                         f"👤 {member.mention} (`{member.name}` / `{member.id}`)\n"
                         f"We now have **{member.guild.member_count}** members."
@@ -436,7 +436,7 @@ class Welcome(commands.Cog):
     # WELCOME SLASH COMMANDS TREE (/welcome)
     # ══════════════════════════════════════════════════════════════════════
 
-    welcome_group = app_commands.Group(name="welcome", description="Breeze greeting and auto-roles setup panel")
+    welcome_group = app_commands.Group(name="welcome", description="KINETICHOST greeting and auto-roles setup panel")
 
     @welcome_group.command(name="setup", description="Configure the welcome system")
     @app_commands.describe(
@@ -482,7 +482,7 @@ class Welcome(commands.Cog):
             )
             await db.commit()
 
-        success = BreezeSuccessContainer(
+        success = KINETICHOSTSuccessContainer(
             "Welcome System Configured",
             f"• Welcome channel: {channel.mention}\n"
             f"• DM system: `{'Enabled' if dm_enabled else 'Disabled'}`\n"
@@ -498,7 +498,7 @@ class Welcome(commands.Cog):
         
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = BreezeErrorContainer("Not Configured", "Welcome system is not set up on this server.")
+            err = KINETICHOSTErrorContainer("Not Configured", "Welcome system is not set up on this server.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -514,8 +514,8 @@ class Welcome(commands.Cog):
         welcome_txt = settings["welcome_message"] or default_welcome
         translated_msg = await translate_welcome_variables(welcome_txt, interaction.user)
 
-        # Build V2 Welcome Layout View using BreezeContainerBuilder
-        builder = BreezeContainerBuilder(
+        # Build V2 Welcome Layout View using KINETICHOSTContainerBuilder
+        builder = KINETICHOSTContainerBuilder(
             title=f"Welcome to {interaction.guild.name}",
             accent_color=3447003,
             thumbnail_url=interaction.user.display_avatar.url if interaction.user.display_avatar else None
@@ -524,10 +524,10 @@ class Welcome(commands.Cog):
         builder.add_section("Member Information", f"You are member number **{interaction.guild.member_count}**.")
         builder.add_section("Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
         
-        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:rules:{interaction.user.id}")
-        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:support:{interaction.user.id}")
-        btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:website:{interaction.user.id}")
-        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"breeze:welcome:announce:{interaction.user.id}")
+        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:rules:{interaction.user.id}")
+        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:support:{interaction.user.id}")
+        btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:website:{interaction.user.id}")
+        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:announce:{interaction.user.id}")
         builder.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
         
         welcome_layout = builder.build()
@@ -541,14 +541,14 @@ class Welcome(commands.Cog):
         
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = BreezeErrorContainer("Not Configured", "Welcome system is not set up on this server.")
+            err = KINETICHOSTErrorContainer("Not Configured", "Welcome system is not set up on this server.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
         # Fire member join listener logic on the caller
         await self.on_member_join(interaction.user)
         
-        success = BreezeSuccessContainer("Test Executed", "A test welcome banner has been generated. Please check DMs and the welcome channels.")
+        success = KINETICHOSTSuccessContainer("Test Executed", "A test welcome banner has been generated. Please check DMs and the welcome channels.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @welcome_group.command(name="disable", description="Disable welcome system greetings")
@@ -561,7 +561,7 @@ class Welcome(commands.Cog):
             await db.execute("DELETE FROM welcome_settings WHERE guild_id = ?", (guild_id,))
             await db.commit()
 
-        success = BreezeSuccessContainer("Welcome System Disabled", "The welcome system has been disabled and cleared.")
+        success = KINETICHOSTSuccessContainer("Welcome System Disabled", "The welcome system has been disabled and cleared.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @welcome_group.command(name="edit", description="Edit welcome message text or rules guidelines text")
@@ -580,7 +580,7 @@ class Welcome(commands.Cog):
         
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = BreezeErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
+            err = KINETICHOSTErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -591,7 +591,7 @@ class Welcome(commands.Cog):
                 await db.execute("UPDATE welcome_settings SET rules_text = ? WHERE guild_id = ?", (value, guild_id))
             await db.commit()
 
-        success = BreezeSuccessContainer("Welcome Property Updated", f"Property `{message_type}` set to: **{value}**")
+        success = KINETICHOSTSuccessContainer("Welcome Property Updated", f"Property `{message_type}` set to: **{value}**")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @welcome_group.command(name="premade", description="Apply a premade welcome message template")
@@ -611,7 +611,7 @@ class Welcome(commands.Cog):
         
         settings = await self.get_settings(guild_id)
         if not settings:
-            err = BreezeErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
+            err = KINETICHOSTErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -631,7 +631,7 @@ class Welcome(commands.Cog):
                 "• Check out our billing panel and services list.\n"
                 "• Click **📜 Rules** to read our Terms of Service (ToS).\n"
                 "• Open a billing or support inquiry via **🎫 Support**.\n\n"
-                "Thank you for choosing Breeze! *Total clients: {membercount}*"
+                "Thank you for choosing kinetic! *Total clients: {membercount}*"
             ),
             "gaming": (
                 "🎮 **Welcome {mention} to the {server} lobby!**\n"
@@ -652,7 +652,7 @@ class Welcome(commands.Cog):
 
         selected_message = templates.get(template)
         if not selected_message:
-            err = BreezeErrorContainer("Invalid Template", "The requested template could not be found.")
+            err = KINETICHOSTErrorContainer("Invalid Template", "The requested template could not be found.")
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
@@ -661,7 +661,7 @@ class Welcome(commands.Cog):
             await db.commit()
 
         preview_msg = await translate_welcome_variables(selected_message, interaction.user)
-        success = BreezeSuccessContainer("Premade Welcome Message Applied", f"Theme `{template}` applied. Preview:")
+        success = KINETICHOSTSuccessContainer("Premade Welcome Message Applied", f"Theme `{template}` applied. Preview:")
         success.add_section("Greetings Preview", preview_msg)
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
@@ -671,7 +671,7 @@ class Welcome(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         
         # Build the visual container organizing variables into categories
-        builder = BreezeContainerBuilder("Welcome Variables", "List of all supported placeholders you can use in your welcome messages.")
+        builder = KINETICHOSTContainerBuilder("Welcome Variables", "List of all supported placeholders you can use in your welcome messages.")
         
         builder.add_section("👤 Member Variables", 
             "`{user}` — Full username (e.g. Username#0000)\n"
