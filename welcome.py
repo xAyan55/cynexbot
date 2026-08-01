@@ -149,37 +149,40 @@ async def on_interaction(interaction: discord.Interaction):
     action = custom_id.split(":")[2]
     await interaction.response.defer(ephemeral=True)
 
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute(
+            "SELECT rules_text, support_text, website_url, announce_text FROM welcome_settings WHERE guild_id = ?",
+            (str(interaction.guild_id),)
+        ) as cursor:
+            row = await cursor.fetchone()
+
+    rules_txt = row[0] if row and row[0] else None
+    support_txt = row[1] if row and row[1] else None
+    website_txt = row[2] if row and row[2] else None
+    announce_txt = row[3] if row and row[3] else None
+
     if action == "rules":
-        async with aiosqlite.connect(DB_PATH) as db:
-            async with db.execute("SELECT rules_text FROM welcome_settings WHERE guild_id = ?", (str(interaction.guild_id),)) as cursor:
-                row = await cursor.fetchone()
-                
-        rules_text = row[0] if row and row[0] else "📜 Please check the server rules channels for details."
-        info = KINETICHOSTInfoContainer("Server Rules", rules_text)
+        msg = rules_txt or "📜 Please check the server rules channels for details."
+        info = KINETICHOSTInfoContainer("Server Rules", msg)
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "support":
-        # Check if tickets system is loaded
-        tickets_cog = interaction.client.get_cog("TicketGroup") # app commands group is not a Cog, tickets is usually registered
-        # We can send information about tickets
-        info = KINETICHOSTInfoContainer(
-            "KINETICHOST Help Desk Support",
-            "🎫 Need assistance? Run the `/ticket panel` or `/ticket setup` command to contact staff."
-        )
+        msg = support_txt or "🎫 Need assistance? Run the `/ticket panel` or `/ticket setup` command to contact staff."
+        info = KINETICHOSTInfoContainer("Help Desk & Support", msg)
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "website":
-        info = KINETICHOSTInfoContainer(
-            "KINETICHOST Web Portal",
-            "🌐 Visit our official web site at: **https://KINETICHOST.dev**"
-        )
+        msg = website_txt or "🌐 Visit our official web site at: **https://kinetichost.com**"
+        if not (msg.startswith("http://") or msg.startswith("https://")):
+            msg = f"🌐 Website: {msg}"
+        else:
+            msg = f"🌐 Visit our website at: **{msg}**"
+        info = KINETICHOSTInfoContainer("Web Portal", msg)
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
     elif action == "announce":
-        info = KINETICHOSTInfoContainer(
-            "📢 Server Announcements",
-            "To stay updated, check our announcement channels and enable notifications!"
-        )
+        msg = announce_txt or "📢 To stay updated, check our server announcement channels and enable notifications!"
+        info = KINETICHOSTInfoContainer("Server Announcements", msg)
         await interaction.followup.send(view=info.build(), ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -209,9 +212,17 @@ class Welcome(commands.Cog):
                     join_roles TEXT DEFAULT '[]',
                     log_channel_id TEXT,
                     welcome_message TEXT,
-                    rules_text TEXT
+                    rules_text TEXT,
+                    support_text TEXT,
+                    website_url TEXT,
+                    announce_text TEXT
                 )
             """)
+            for col in ["support_text", "website_url", "announce_text"]:
+                try:
+                    await db.execute(f"ALTER TABLE welcome_settings ADD COLUMN {col} TEXT")
+                except Exception:
+                    pass
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS member_history (
                     guild_id TEXT NOT NULL,
@@ -228,7 +239,7 @@ class Welcome(commands.Cog):
     async def get_settings(self, guild_id: str) -> Optional[dict]:
         async with aiosqlite.connect(DB_PATH) as db:
             async with db.execute(
-                "SELECT channel_id, dm_enabled, join_roles, log_channel_id, welcome_message, rules_text FROM welcome_settings WHERE guild_id = ?",
+                "SELECT channel_id, dm_enabled, join_roles, log_channel_id, welcome_message, rules_text, support_text, website_url, announce_text FROM welcome_settings WHERE guild_id = ?",
                 (guild_id,)
             ) as cursor:
                 row = await cursor.fetchone()
@@ -239,9 +250,25 @@ class Welcome(commands.Cog):
                         "join_roles": json.loads(row[2]),
                         "log_channel_id": row[3],
                         "welcome_message": row[4],
-                        "rules_text": row[5]
+                        "rules_text": row[5],
+                        "support_text": row[6],
+                        "website_url": row[7],
+                        "announce_text": row[8]
                     }
         return None
+
+    def build_welcome_buttons(self, member: discord.Member, settings: dict) -> List[Button]:
+        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:rules:{member.id}")
+        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:support:{member.id}")
+        
+        web_url = settings.get("website_url")
+        if web_url and (web_url.startswith("http://") or web_url.startswith("https://")):
+            btn_web = Button(label="Website", style=discord.ButtonStyle.link, url=web_url)
+        else:
+            btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:website:{member.id}")
+            
+        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:announce:{member.id}")
+        return [btn_rules, btn_support, btn_web, btn_announce]
 
     # ══════════════════════════════════════════════════════════════════════
     # GUILD MEMBER JOIN/LEAVE OBSERVERS
@@ -357,11 +384,8 @@ class Welcome(commands.Cog):
         builder.add_section("Member Information", f"You are member number **{member.guild.member_count}**.")
         builder.add_section("Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
         
-        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:rules:{member.id}")
-        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:support:{member.id}")
-        btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:website:{member.id}")
-        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:announce:{member.id}")
-        builder.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
+        buttons = self.build_welcome_buttons(member, settings)
+        builder.add_buttons(*buttons)
         
         welcome_layout = builder.build()
 
@@ -564,14 +588,17 @@ class Welcome(commands.Cog):
         success = KINETICHOSTSuccessContainer("Welcome System Disabled", "The welcome system has been disabled and cleared.")
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
-    @welcome_group.command(name="edit", description="Edit welcome message text or rules guidelines text")
+    @welcome_group.command(name="edit", description="Edit welcome message text, rules, support, website, or announcements")
     @app_commands.describe(
         message_type="Type of parameter to update",
-        value="New parameter text (Supports brackets: {mention}, {server}, etc.)"
+        value="New parameter text or URL"
     )
     @app_commands.choices(message_type=[
         app_commands.Choice(name="Welcome Message", value="welcome_message"),
-        app_commands.Choice(name="Rules Guidelines", value="rules_text")
+        app_commands.Choice(name="Rules Guidelines", value="rules_text"),
+        app_commands.Choice(name="Support Info", value="support_text"),
+        app_commands.Choice(name="Website URL/Text", value="website_url"),
+        app_commands.Choice(name="Announcement Info", value="announce_text")
     ])
     @app_commands.checks.has_permissions(administrator=True)
     async def edit_welcome(self, interaction: discord.Interaction, message_type: str, value: str):
@@ -584,14 +611,64 @@ class Welcome(commands.Cog):
             await interaction.followup.send(view=err.build(), ephemeral=True)
             return
 
+        valid_cols = {
+            "welcome_message": "welcome_message",
+            "rules_text": "rules_text",
+            "support_text": "support_text",
+            "website_url": "website_url",
+            "announce_text": "announce_text"
+        }
+        col_name = valid_cols.get(message_type)
+        if col_name:
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute(f"UPDATE welcome_settings SET {col_name} = ? WHERE guild_id = ?", (value, guild_id))
+                await db.commit()
+
+        success = KINETICHOSTSuccessContainer("Welcome Property Updated", f"Property `{message_type}` set to:\n**{value}**")
+        await interaction.followup.send(view=success.build(), ephemeral=True)
+
+    @welcome_group.command(name="buttons", description="Customize Support, Website, and Announcement buttons")
+    @app_commands.describe(
+        support_text="Text shown when Support button is clicked (e.g. 'Create a ticket in #support')",
+        website_url="Website URL for Website button (e.g. 'https://yourwebsite.com')",
+        announce_text="Text shown when Announcement button is clicked (e.g. 'Check #announcements')"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def config_welcome_buttons(
+        self,
+        interaction: discord.Interaction,
+        support_text: Optional[str] = None,
+        website_url: Optional[str] = None,
+        announce_text: Optional[str] = None
+    ):
+        await interaction.response.defer(ephemeral=True)
+        guild_id = str(interaction.guild.id)
+
+        settings = await self.get_settings(guild_id)
+        if not settings:
+            err = KINETICHOSTErrorContainer("Not Configured", "Welcome system is not set up. Run `/welcome setup` first.")
+            await interaction.followup.send(view=err.build(), ephemeral=True)
+            return
+
+        updates = []
         async with aiosqlite.connect(DB_PATH) as db:
-            if message_type == "welcome_message":
-                await db.execute("UPDATE welcome_settings SET welcome_message = ? WHERE guild_id = ?", (value, guild_id))
-            elif message_type == "rules_text":
-                await db.execute("UPDATE welcome_settings SET rules_text = ? WHERE guild_id = ?", (value, guild_id))
+            if support_text is not None:
+                await db.execute("UPDATE welcome_settings SET support_text = ? WHERE guild_id = ?", (support_text, guild_id))
+                updates.append(f"• **Support:** {support_text}")
+            if website_url is not None:
+                await db.execute("UPDATE welcome_settings SET website_url = ? WHERE guild_id = ?", (website_url, guild_id))
+                updates.append(f"• **Website URL:** {website_url}")
+            if announce_text is not None:
+                await db.execute("UPDATE welcome_settings SET announce_text = ? WHERE guild_id = ?", (announce_text, guild_id))
+                updates.append(f"• **Announcements:** {announce_text}")
             await db.commit()
 
-        success = KINETICHOSTSuccessContainer("Welcome Property Updated", f"Property `{message_type}` set to: **{value}**")
+        if not updates:
+            info = KINETICHOSTInfoContainer("No Changes", "No button options were specified to update.")
+            await interaction.followup.send(view=info.build(), ephemeral=True)
+            return
+
+        success = KINETICHOSTSuccessContainer("Welcome Buttons Configured", "\n".join(updates))
         await interaction.followup.send(view=success.build(), ephemeral=True)
 
     @welcome_group.command(name="premade", description="Apply a premade welcome message template")
