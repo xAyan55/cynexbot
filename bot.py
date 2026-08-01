@@ -575,7 +575,7 @@ async def render_v2_layout(user_id: str, components: List[dict], container_props
     view = LayoutView()
     accent_int = parse_color(container_props.get('accent_color', ''))
     root = Container(
-        accent_color=accent_int,
+        accent_color=None,
         spoiler=container_props.get('spoiler', False)
     )
     
@@ -586,9 +586,8 @@ async def render_v2_layout(user_id: str, components: List[dict], container_props
         comp_type = comp['type']
         
         if comp_type == 'container':
-            sub_accent = parse_color(comp.get('accent_color', ''))
             sub_spoiler = comp.get('spoiler', False)
-            sub = Container(accent_color=sub_accent, spoiler=sub_spoiler)
+            sub = Container(accent_color=None, spoiler=sub_spoiler)
             root.add_item(sub)
             current_container = sub
             

@@ -7,7 +7,7 @@ class KINETICHOSTContainerBuilder:
     """Universal KINETICHOST UI Builder using Components V2 Layouts with auto-splitting."""
     def __init__(self, title: str, description: Optional[str] = None, accent_color: Optional[int] = None, thumbnail_url: Optional[str] = None):
         self.layout = LayoutView()
-        self.accent_color = accent_color
+        self.accent_color = None
         self.containers = []
         self._new_container()
         
@@ -19,13 +19,9 @@ class KINETICHOSTContainerBuilder:
             self.current_container.add_item(Section(TextDisplay(header_text), accessory=Thumbnail(thumbnail_url)))
         else:
             self.current_container.add_item(TextDisplay(header_text))
-            
-        self.current_container.add_item(Separator())
 
     def _new_container(self):
-        # Only the root container has self.accent_color. Subsequent containers have None.
-        color = self.accent_color if not self.containers else None
-        container = Container(accent_color=color)
+        container = Container(accent_color=None)
         self.layout.add_item(container)
         self.containers.append(container)
         self.current_container = container
@@ -33,13 +29,11 @@ class KINETICHOSTContainerBuilder:
     def _ensure_space(self, items_needed: int = 1):
         # A container can have max 5 child components
         if len(self.current_container.children) + items_needed > 5:
-            # If we already have 5 top-level containers in LayoutView, we can't add more.
-            # Otherwise, spin up a new container.
             if len(self.layout.children) < 5:
                 self._new_container()
 
     def add_section(self, title: str, content: str, accessory = None):
-        """Adds a section to the container. If an accessory is provided, uses Section; otherwise uses TextDisplay."""
+        """Adds a section to the container. If an accessory is provided, uses Section; otherwise merges into TextDisplay."""
         self._ensure_space()
         
         if accessory is not None:
@@ -58,13 +52,23 @@ class KINETICHOSTContainerBuilder:
             if content:
                 text_parts.append(content)
             full_text = "\n".join(text_parts) if text_parts else "\u200b"
-            self.current_container.add_item(TextDisplay(full_text))
+            
+            # Merge with existing TextDisplay if possible to conserve container component count
+            if self.current_container.children and isinstance(self.current_container.children[-1], TextDisplay):
+                existing_item = self.current_container.children[-1]
+                existing_item.content = f"{existing_item.content}\n\n{full_text}"
+            else:
+                self.current_container.add_item(TextDisplay(full_text))
         return self
 
     def add_text(self, text: str):
         """Adds a plain text display section."""
         self._ensure_space()
-        self.current_container.add_item(TextDisplay(text))
+        if self.current_container.children and isinstance(self.current_container.children[-1], TextDisplay):
+            existing_item = self.current_container.children[-1]
+            existing_item.content = f"{existing_item.content}\n\n{text}"
+        else:
+            self.current_container.add_item(TextDisplay(text))
         return self
 
     def add_separator(self):
@@ -120,7 +124,7 @@ class KINETICHOSTPaginationContainer(LayoutView):
         self.pages = pages
         self.user_id = user_id
         self.current_page = 0
-        self.accent_color = accent_color
+        self.accent_color = None
         self.update_layout()
 
     def update_layout(self):
@@ -138,7 +142,7 @@ class KINETICHOSTPaginationContainer(LayoutView):
         builder = KINETICHOSTContainerBuilder(
             title=page_data.get("title", self.title),
             description=page_data.get("description"),
-            accent_color=self.accent_color
+            accent_color=None
         )
         
         content_lines = []
@@ -149,7 +153,6 @@ class KINETICHOSTPaginationContainer(LayoutView):
         is_index = (self.current_page == 0)
         section_name = "Categories" if is_index else "Commands"
         builder.add_section(section_name, combined_content)
-        builder.add_separator()
             
         prev_btn = Button(
             label="Previous",
@@ -195,11 +198,10 @@ class KINETICHOSTPaginationContainer(LayoutView):
 
 # Shared UI Helper Functions
 
-def create_info_card(title: str, description: Optional[str], sections_dict: dict, thumbnail_url: Optional[str] = None, accent_color: int = 3447003) -> LayoutView:
-    builder = KINETICHOSTContainerBuilder(title, description, accent_color=accent_color, thumbnail_url=thumbnail_url)
+def create_info_card(title: str, description: Optional[str], sections_dict: dict, thumbnail_url: Optional[str] = None, accent_color: Optional[int] = None) -> LayoutView:
+    builder = KINETICHOSTContainerBuilder(title, description, accent_color=None, thumbnail_url=thumbnail_url)
     for sec_title, sec_desc in sections_dict.items():
         builder.add_section(sec_title, sec_desc)
-        builder.add_separator()
     return builder.build()
 
 def create_success_section(title: str, message: str) -> LayoutView:
@@ -218,18 +220,16 @@ def create_error_section(title: str, message: str) -> LayoutView:
     return builder.build()
 
 def create_user_card(member: discord.Member, sections_dict: dict) -> LayoutView:
-    builder = KINETICHOSTContainerBuilder(f"👤 User Profile", f"Details for {member.mention}", accent_color=3447003, thumbnail_url=member.display_avatar.url if member.display_avatar else None)
+    builder = KINETICHOSTContainerBuilder(f"👤 User Profile", f"Details for {member.mention}", accent_color=None, thumbnail_url=member.display_avatar.url if member.display_avatar else None)
     for sec_title, sec_desc in sections_dict.items():
         builder.add_section(sec_title, sec_desc)
-        builder.add_separator()
     return builder.build()
 
 def create_server_card(guild: discord.Guild, sections_dict: dict) -> LayoutView:
-    builder = KINETICHOSTContainerBuilder(f"🏠 Server Information", f"Detailed breakdown of **{guild.name}**", accent_color=3447003, thumbnail_url=guild.icon.url if guild.icon else None)
+    builder = KINETICHOSTContainerBuilder(f"🏠 Server Information", f"Detailed breakdown of **{guild.name}**", accent_color=None, thumbnail_url=guild.icon.url if guild.icon else None)
     for sec_title, sec_desc in sections_dict.items():
         builder.add_section(sec_title, sec_desc)
-        builder.add_separator()
     return builder.build()
 
-def create_pagination_menu(title: str, pages_data: List[dict], user_id: int, accent_color: int = 3447003) -> LayoutView:
-    return KINETICHOSTPaginationContainer(title, pages_data, user_id, accent_color)
+def create_pagination_menu(title: str, pages_data: List[dict], user_id: int, accent_color: Optional[int] = None) -> LayoutView:
+    return KINETICHOSTPaginationContainer(title, pages_data, user_id, accent_color=None)

@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -350,7 +350,7 @@ class Welcome(commands.Cog):
         # Build V2 Welcome Layout View using KINETICHOSTContainerBuilder
         builder = KINETICHOSTContainerBuilder(
             title=f"Welcome to {member.guild.name}",
-            accent_color=3447003,
+            accent_color=None,
             thumbnail_url=member.display_avatar.url if member.display_avatar else None
         )
         builder.add_section("Greeting Section", translated_msg)
@@ -517,7 +517,7 @@ class Welcome(commands.Cog):
         # Build V2 Welcome Layout View using KINETICHOSTContainerBuilder
         builder = KINETICHOSTContainerBuilder(
             title=f"Welcome to {interaction.guild.name}",
-            accent_color=3447003,
+            accent_color=None,
             thumbnail_url=interaction.user.display_avatar.url if interaction.user.display_avatar else None
         )
         builder.add_section("Greeting Section", translated_msg)

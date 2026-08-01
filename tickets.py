@@ -428,7 +428,7 @@ async def log_ticket_action(guild: discord.Guild, action_title: str, description
     if not channel:
         return
         
-    root_container = Container(accent_color=3447003)
+    root_container = Container(accent_color=None)
     root_container.add_item(TextDisplay(
         f"📋 **Ticket Action Log: {action_title}**\n"
         f"{description}\n"
@@ -672,7 +672,7 @@ class OpenTicketModal(discord.ui.Modal):
             builder = KINETICHOSTContainerBuilder(
                 title=f"Ticket {ticket_num}",
                 description=f"Hello {user.mention}, thank you for opening a support ticket!",
-                accent_color=accent_color_int,
+                accent_color=None,
                 thumbnail_url=user.display_avatar.url if user.display_avatar else None
             )
             
@@ -743,7 +743,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
             if creator:
                 await channel.set_permissions(creator, send_messages=False, read_messages=True)
                 
-            root_container = Container(accent_color=16711680)  # Red
+            root_container = Container(accent_color=None)
             root_container.add_item(TextDisplay(
                 f"🔒 **Ticket Closed**\n"
                 f"The ticket creator can no longer send messages in this channel."
@@ -797,7 +797,7 @@ class GlobalTicketWelcomeView(discord.ui.View):
                 
             await update_ticket_claim(str(channel.id), str(user.id))
             
-            root_container = Container(accent_color=3447003)
+            root_container = Container(accent_color=None)
             root_container.add_item(TextDisplay(f"👤 **Ticket Claimed**\nThis staff member will now assist you."))
             root_container.add_item(Separator())
             
@@ -977,7 +977,7 @@ class GlobalTicketControlView(discord.ui.View):
             if creator:
                 await channel.set_permissions(creator, send_messages=True, read_messages=True)
                 
-            root = Container(accent_color=65280) # Green
+            root = Container(accent_color=None)
             root.add_item(TextDisplay(f"🔓 **Ticket Reopened**\nMessaging has been restored."))
             root.add_item(Separator())
             root.add_item(TextDisplay(f"**Reopened By**\n{user.mention}"))
@@ -1018,7 +1018,7 @@ class GlobalTicketControlView(discord.ui.View):
                 
             await update_ticket_claim(str(channel.id), None)
             
-            root = Container(accent_color=15105570) # Orange
+            root = Container(accent_color=None)
             root.add_item(TextDisplay(f"👤 **Ticket Unclaimed**\nIt is now open for support staff assistance."))
             root.add_item(Separator())
             root.add_item(TextDisplay(f"**Unclaimed By**\n{user.mention}"))
@@ -1075,7 +1075,7 @@ class TicketPanelBuilderView(discord.ui.LayoutView):
             self.clear_items()
             
             accent_int = parse_color(self.config['accent_color']) or 5763719
-            builder = KINETICHOSTContainerBuilder("🎫 KINETICHOST Ticket Panel Builder 🎫", "Design your Components V2 support ticket panels visually.", accent_color=accent_int)
+            builder = KINETICHOSTContainerBuilder("🎫 KINETICHOST Ticket Panel Builder 🎫", "Design your Components V2 support ticket panels visually.", accent_color=None)
             
             cats_raw = ", ".join([c['name'] for c in self.config['categories']]) or "None"
             desc_val = self.config['description']
@@ -1297,7 +1297,7 @@ class PublishPanelButton(discord.ui.Button):
             # Build Components V2 Panel
             v2_view = LayoutView()
             accent_int = parse_color(self.builder_view.config['accent_color']) or 3447003
-            root = Container(accent_color=accent_int)
+            root = Container(accent_color=None)
             
             # Text display title & description
             root.add_item(TextDisplay(f"**{self.builder_view.config['title']}**\n{self.builder_view.config['description']}"))
@@ -1433,7 +1433,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
             if creator:
                 await channel.set_permissions(creator, send_messages=False, read_messages=True)
                 
-            root_container = Container(accent_color=16711680)  # Red
+            root_container = Container(accent_color=None)
             root_container.add_item(TextDisplay(
                 f"🔒 **This ticket was closed by {user.mention}.**\n"
                 f"The ticket creator can no longer send messages in this channel.\n"
@@ -1483,7 +1483,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
             if creator:
                 await channel.set_permissions(creator, send_messages=True, read_messages=True)
                 
-            root = Container(accent_color=65280) # Green
+            root = Container(accent_color=None)
             root.add_item(TextDisplay(f"🔓 **Ticket reopened by {user.mention}.**\nMessaging has been restored."))
             
             layout = LayoutView()
@@ -1538,7 +1538,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
                 
             await update_ticket_claim(str(channel.id), str(user.id))
             
-            root = Container(accent_color=3447003)
+            root = Container(accent_color=None)
             root.add_item(TextDisplay(f"👤 **Ticket claimed by {user.mention}.**\nThey will assist you shortly."))
             layout = LayoutView()
             layout.add_item(root)
@@ -1570,7 +1570,7 @@ class TicketGroup(app_commands.Group, name="ticket"):
                 
             await update_ticket_claim(str(channel.id), None)
             
-            root = Container(accent_color=15105570) # Orange
+            root = Container(accent_color=None)
             root.add_item(TextDisplay(f"👤 **Ticket unclaimed by {user.mention}.**\nIt is now open for any staff member."))
             layout = LayoutView()
             layout.add_item(root)

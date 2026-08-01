@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import logging
 from datetime import datetime
@@ -123,7 +123,7 @@ class ReviewSubmitModal(discord.ui.Modal, title="Submit a Service Review"):
 
         if pub_channel:
             try:
-                pub_layout = KINETICHOSTContainerBuilder(f"Review: {service_text}", accent_color=13937975) # Gold
+                pub_layout = KINETICHOSTContainerBuilder(f"Review: {service_text}", accent_color=None)
                 meta_content = f"**Rating:** {'⭐' * val}\n**Submitted By:** {interaction.user.mention}"
                 if screenshot_url:
                     meta_content += f"\n**Screenshot Reference:** {screenshot_url}"
@@ -283,7 +283,7 @@ class Reviews(commands.Cog):
                 pub_channel = interaction.guild.get_channel(int(settings["review_channel_id"]))
                 if pub_channel:
                     try:
-                        pub_layout = KINETICHOSTContainerBuilder(f"Review: {service}", accent_color=13937975) # Gold
+                        pub_layout = KINETICHOSTContainerBuilder(f"Review: {service}", accent_color=None)
                         pub_layout.add_section("Rating", "⭐" * rating)
                         pub_layout.add_section("Customer Review", msg_content)
                         pub_layout.add_section("Submitted By", f"<@{author_id}>")
@@ -359,7 +359,7 @@ class Reviews(commands.Cog):
                 action_row = message.components[0] if message.components else None
                 if action_row:
                     new_layout = LayoutView()
-                    new_container = Container(accent_color=13937975) # Gold
+                    new_container = Container(accent_color=None)
                     new_layout.add_item(new_container)
                     
                     # Extract contents from existing sections
@@ -373,7 +373,7 @@ class Reviews(commands.Cog):
                             
                     if rev_row:
                         author_id, rating, service, msg_content, screenshot_url = rev_row
-                        pub_layout = KINETICHOSTContainerBuilder(f"Review: {service}", accent_color=13937975)
+                        pub_layout = KINETICHOSTContainerBuilder(f"Review: {service}", accent_color=None)
                         meta_content = f"**Rating:** {'⭐' * rating}\n**Submitted By:** <@{author_id}>"
                         if screenshot_url:
                             meta_content += f"\n**Screenshot Reference:** {screenshot_url}"
@@ -520,7 +520,7 @@ class Reviews(commands.Cog):
             
             if pub_channel:
                 try:
-                    pub_layout = KINETICHOSTContainerBuilder(f"Review: {service}", accent_color=13937975)
+                    pub_layout = KINETICHOSTContainerBuilder(f"Review: {service}", accent_color=None)
                     meta_content = f"**Rating:** {'⭐' * rating}\n**Submitted By:** <@{author_id}>"
                     if screenshot_url:
                         meta_content += f"\n**Screenshot Reference:** {screenshot_url}"
@@ -624,7 +624,7 @@ class Reviews(commands.Cog):
                 "sections": page_sections
             })
 
-        paginator = KINETICHOSTPaginationContainer("Server Reviews List", pages, interaction.user.id, accent_color=13937975)
+        paginator = KINETICHOSTPaginationContainer("Server Reviews List", pages, interaction.user.id, accent_color=None)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
     @review_group.command(name="stats", description="Show reviews statistics and analytics")

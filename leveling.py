@@ -1,4 +1,4 @@
-﻿import re
+import re
 import random
 import logging
 from datetime import datetime
@@ -268,7 +268,7 @@ class Leveling(commands.Cog):
         builder = KINETICHOSTContainerBuilder(
             title="🎉 Level Up!",
             description=f"Congratulations {message.author.mention}!",
-            accent_color=3066993,
+            accent_color=None,
             thumbnail_url=message.author.display_avatar.url if message.author.display_avatar else None
         )
         builder.add_section("Rank Progress", f"You reached **Level {new_level}**.")
@@ -338,7 +338,7 @@ class Leveling(commands.Cog):
         builder = KINETICHOSTContainerBuilder(
             title="Rank Details",
             description=f"Leveling statistics for {target.mention}",
-            accent_color=3447003,
+            accent_color=None,
             thumbnail_url=target.display_avatar.url if target.display_avatar else None
         )
         builder.add_section("Level Status", f"Level **{level}**")
@@ -391,7 +391,7 @@ class Leveling(commands.Cog):
         builder = KINETICHOSTContainerBuilder(
             title="Server Leaderboard",
             description=f"Top 10 highest-level users in **{interaction.guild.name}**",
-            accent_color=3447003
+            accent_color=None
         )
         builder.add_section("Rankings", leaderboard_text)
 
@@ -492,7 +492,7 @@ class Leveling(commands.Cog):
         builder = KINETICHOSTContainerBuilder(
             title="⚙️ Leveling Settings",
             description=f"Configuration for **{interaction.guild.name}**",
-            accent_color=3447003
+            accent_color=None
         )
         builder.add_section("Enabled Status", enabled_str)
         builder.add_separator()

@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import logging
 import re
@@ -143,7 +143,7 @@ def build_poll_layout(question: str, options: list, votes: dict, anonymous: bool
     builder = KINETICHOSTContainerBuilder(
         title=f"Poll: {question}",
         description="Cast your vote using the buttons below.",
-        accent_color=3447003
+        accent_color=None
     )
     
     builder.add_section("Options Tally", options_text)
@@ -501,7 +501,7 @@ class Utilities(commands.Cog):
                     desc = generate_poll_description(question, options, votes, anonymous, allow_multiple, int(datetime.now().timestamp()), "closed")
                     
                     layout = LayoutView()
-                    container = Container(accent_color=65280)
+                    container = Container(accent_color=None)
                     container.add_item(TextDisplay(desc))
                     layout.add_item(container)
                     
@@ -584,7 +584,7 @@ class Utilities(commands.Cog):
                     
             try:
                 layout = LayoutView()
-                container = Container(accent_color=16776960)
+                container = Container(accent_color=None)
                 container.add_item(TextDisplay(f"📌 **Sticky Message**\n\n{text}"))
                 layout.add_item(container)
                 new_msg = await message.channel.send(view=layout)
@@ -1297,7 +1297,7 @@ class Utilities(commands.Cog):
         # Build the premium single container layout as in the second screenshot
         builder = KINETICHOSTContainerBuilder(
             title="KINETICHOSTBytes - Paid Hosting Plans",
-            accent_color=3447003
+            accent_color=None
         )
         
         # Minecraft Section
@@ -1643,7 +1643,7 @@ class StickyGroup(app_commands.Group, name="sticky"):
             except Exception:
                 pass
                 
-        builder = KINETICHOSTContainerBuilder("Sticky Message", None, accent_color=16776960)
+        builder = KINETICHOSTContainerBuilder("Sticky Message", None, accent_color=None)
         builder.add_section("Notice", text)
         new_msg = await interaction.channel.send(view=builder.build())
         
@@ -1714,7 +1714,7 @@ class StickyGroup(app_commands.Group, name="sticky"):
                 ]
             })
             
-        paginator = create_pagination_menu("Server Sticky Messages", pages, interaction.user.id, accent_color=16776960)
+        paginator = create_pagination_menu("Server Sticky Messages", pages, interaction.user.id, accent_color=None)
         await interaction.followup.send(view=paginator, ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════════════

@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import logging
 from datetime import datetime
@@ -115,7 +115,7 @@ class SuggestionSubmitModal(discord.ui.Modal, title="Submit a Suggestion"):
         if suggest_channel:
             try:
                 # Build V2 Container (Approved - Green)
-                pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title_text}", accent_color=3066993) # Green
+                pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title_text}", accent_color=None)
                 pub_layout.add_section("Category", f"`{self.category}`")
                 pub_layout.add_section("Description", desc_text)
                 pub_layout.add_section("Status", "🟢 **Approved**")
@@ -304,7 +304,7 @@ class Suggestions(commands.Cog):
                     else:
                         badge = "⏳ **Pending Moderation**"
                         
-                    pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title}", accent_color=accent_col)
+                    pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title}", accent_color=None)
                     pub_layout.add_section("Category", f"`{category}`")
                     pub_layout.add_section("Description", desc)
                     pub_layout.add_section("Status", badge)
@@ -466,7 +466,7 @@ class Suggestions(commands.Cog):
                         if target_msg:
                             break
 
-                    pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title}", accent_color=3066993) # Green
+                    pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title}", accent_color=None)
                     pub_layout.add_section("Category", f"`{category}`")
                     pub_layout.add_section("Description", desc)
                     pub_layout.add_section("Status", "🟢 **Approved**")
@@ -552,7 +552,7 @@ class Suggestions(commands.Cog):
                         if target_msg:
                             break
 
-                    pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title}", accent_color=15158332) # Red
+                    pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title}", accent_color=None)
                     pub_layout.add_section("Category", f"`{category}`")
                     pub_layout.add_section("Description", desc)
                     pub_layout.add_section("Status", "🔴 **Denied**")
@@ -627,7 +627,7 @@ class Suggestions(commands.Cog):
                         if target_msg:
                             break
 
-                    pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title}", accent_color=13937975) # Gold
+                    pub_layout = KINETICHOSTContainerBuilder(f"Suggestion: {title}", accent_color=None)
                     pub_layout.add_section("Category", f"`{category}`")
                     pub_layout.add_section("Description", desc)
                     pub_layout.add_section("Status", "🔵 **Implemented**")
