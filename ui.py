@@ -1,4 +1,4 @@
-﻿import discord
+import discord
 from discord.ui import LayoutView, Container, TextDisplay, Separator, Section, ActionRow, Button, Thumbnail, MediaGallery
 from discord import MediaGalleryItem, SeparatorSpacing
 from typing import Optional, List
@@ -14,10 +14,11 @@ class KINETICHOSTContainerBuilder:
         header_text = f"**{title}**"
         if description:
             header_text += f"\n{description}"
-        self.current_container.add_item(TextDisplay(header_text))
         
         if thumbnail_url:
-            self.current_container.add_item(Thumbnail(thumbnail_url))
+            self.current_container.add_item(Section(TextDisplay(header_text), accessory=Thumbnail(thumbnail_url)))
+        else:
+            self.current_container.add_item(TextDisplay(header_text))
             
         self.current_container.add_item(Separator())
 

@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import aiosqlite
 import json
 import logging
@@ -285,6 +285,9 @@ def validate_v2_layout(layout: discord.ui.LayoutView):
             if len(item.children) > 5:
                 raise ValueError(f"Invalid Container ({current_path}): Contains {len(item.children)} child components, exceeding the Discord limit of 5.")
             for child in item.children:
+                c_name = child.__class__.__name__
+                if c_name not in ("ActionRow", "Section", "TextDisplay", "MediaGallery", "Separator", "Container"):
+                    raise ValueError(f"Invalid Container ({current_path}): Child type '{c_name}' is not allowed directly inside a Container.")
                 validate_item(child, current_path)
 
         elif name == "Section":
