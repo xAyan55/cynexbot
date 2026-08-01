@@ -39,20 +39,26 @@ class KINETICHOSTContainerBuilder:
                 self._new_container()
 
     def add_section(self, title: str, content: str, accessory = None):
-        """Adds a labeled native Section to the container."""
+        """Adds a section to the container. If an accessory is provided, uses Section; otherwise uses TextDisplay."""
         self._ensure_space()
-        if accessory is None:
-            accessory = Thumbnail("https://upload.wikimedia.org/wikipedia/commons/c/c0/1x1.png")
         
-        children = []
-        if title:
-            children.append(title)
-        if content:
-            children.append(content)
-        if not children:
-            children.append("\u200b")
-            
-        self.current_container.add_item(Section(*children, accessory=accessory))
+        if accessory is not None:
+            children = []
+            if title:
+                children.append(title)
+            if content:
+                children.append(content)
+            if not children:
+                children.append("\u200b")
+            self.current_container.add_item(Section(*children, accessory=accessory))
+        else:
+            text_parts = []
+            if title:
+                text_parts.append(f"**{title}**")
+            if content:
+                text_parts.append(content)
+            full_text = "\n".join(text_parts) if text_parts else "\u200b"
+            self.current_container.add_item(TextDisplay(full_text))
         return self
 
     def add_text(self, text: str):
