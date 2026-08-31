@@ -1,6 +1,7 @@
 [Unit]
 Description=KineticHost Discord Bot Service
-After=network.target
+After=network.target network-online.target systemd-resolved.service
+Wants=network-online.target
 
 [Service]
 Type=simple

@@ -374,20 +374,20 @@ class Welcome(commands.Cog):
         welcome_txt = settings["welcome_message"] or default_welcome
         translated_msg = await translate_welcome_variables(welcome_txt, member)
 
-        # Build V2 Welcome Layout View using KINETICHOSTContainerBuilder
-        builder = KINETICHOSTContainerBuilder(
-            title=f"Welcome to {member.guild.name}",
-            accent_color=None,
-            thumbnail_url=member.display_avatar.url if member.display_avatar else None
-        )
-        builder.add_section("Greeting Section", translated_msg)
-        builder.add_section("Member Information", f"You are member number **{member.guild.member_count}**.")
-        builder.add_section("Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
+        # Build V2 Welcome Layout View
+        welcome_layout = LayoutView()
+        container = Container(accent_color=None)
         
+        if member.display_avatar:
+            container.add_item(Section(TextDisplay(translated_msg), accessory=Thumbnail(member.display_avatar.url)))
+        else:
+            container.add_item(TextDisplay(translated_msg))
+            
         buttons = self.build_welcome_buttons(member, settings)
-        builder.add_buttons(*buttons)
-        
-        welcome_layout = builder.build()
+        if buttons:
+            container.add_item(ActionRow(*buttons))
+            
+        welcome_layout.add_item(container)
 
         # 7. Post Welcome Message
         if settings["channel_id"]:
@@ -538,23 +538,20 @@ class Welcome(commands.Cog):
         welcome_txt = settings["welcome_message"] or default_welcome
         translated_msg = await translate_welcome_variables(welcome_txt, interaction.user)
 
-        # Build V2 Welcome Layout View using KINETICHOSTContainerBuilder
-        builder = KINETICHOSTContainerBuilder(
-            title=f"Welcome to {interaction.guild.name}",
-            accent_color=None,
-            thumbnail_url=interaction.user.display_avatar.url if interaction.user.display_avatar else None
-        )
-        builder.add_section("Greeting Section", translated_msg)
-        builder.add_section("Member Information", f"You are member number **{interaction.guild.member_count}**.")
-        builder.add_section("Server Information", "Please click the Rules button below or check the server rules channels to ensure guidelines are followed.")
+        # Build V2 Welcome Layout View
+        welcome_layout = LayoutView()
+        container = Container(accent_color=None)
         
-        btn_rules = Button(label="Rules", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:rules:{interaction.user.id}")
-        btn_support = Button(label="Support", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:support:{interaction.user.id}")
-        btn_web = Button(label="Website", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:website:{interaction.user.id}")
-        btn_announce = Button(label="Announcements", style=discord.ButtonStyle.secondary, custom_id=f"KINETICHOST:welcome:announce:{interaction.user.id}")
-        builder.add_buttons(btn_rules, btn_support, btn_web, btn_announce)
-        
-        welcome_layout = builder.build()
+        if interaction.user.display_avatar:
+            container.add_item(Section(TextDisplay(translated_msg), accessory=Thumbnail(interaction.user.display_avatar.url)))
+        else:
+            container.add_item(TextDisplay(translated_msg))
+            
+        buttons = self.build_welcome_buttons(interaction.user, settings)
+        if buttons:
+            container.add_item(ActionRow(*buttons))
+            
+        welcome_layout.add_item(container)
 
         await interaction.followup.send(view=welcome_layout, ephemeral=True)
 
