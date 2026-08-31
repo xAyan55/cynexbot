@@ -15,7 +15,8 @@ from discord.ui import (
     Separator,
     Section,
     ActionRow,
-    Button
+    Button,
+    Thumbnail
 )
 
 import ui
