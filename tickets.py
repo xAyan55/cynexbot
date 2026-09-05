@@ -286,7 +286,7 @@ def validate_v2_layout(layout: discord.ui.LayoutView):
                 raise ValueError(f"Invalid Container ({current_path}): Contains {len(item.children)} child components, exceeding the Discord limit of 5.")
             for child in item.children:
                 c_name = child.__class__.__name__
-                if c_name not in ("ActionRow", "Section", "TextDisplay", "MediaGallery", "Separator", "Container"):
+                if c_name not in ("ActionRow", "Section", "TextDisplay", "MediaGallery", "Separator", "Container", "File"):
                     raise ValueError(f"Invalid Container ({current_path}): Child type '{c_name}' is not allowed directly inside a Container.")
                 validate_item(child, current_path)
 
@@ -328,6 +328,10 @@ def validate_v2_layout(layout: discord.ui.LayoutView):
             content_stripped = item.content.strip()
             if not content_stripped and '\u200b' not in item.content and '\u2800' not in item.content:
                 raise ValueError(f"Invalid TextDisplay ({current_path}): Content cannot be empty or only whitespace.")
+
+        elif name == "File":
+            if not hasattr(item, 'media') or not item.media:
+                raise ValueError(f"Invalid File ({current_path}): File component must have a media target.")
 
     for child in layout.children:
         validate_item(child)

@@ -671,7 +671,10 @@ async def render_v2_layout(user_id: str, components: List[dict], container_props
                 files_to_attach.append(discord_file)
                 current_container.add_item(File(discord_file, spoiler=spoiler))
             else:
-                current_container.add_item(File(url_or_id, spoiler=spoiler))
+                target_url = url_or_id
+                if target_url and not target_url.startswith(('http://', 'https://', 'attachment://')):
+                    target_url = f"attachment://{target_url}"
+                current_container.add_item(File(target_url, spoiler=spoiler))
                 
     view.add_item(root)
     return view, files_to_attach

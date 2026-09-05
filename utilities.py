@@ -585,7 +585,7 @@ class Utilities(commands.Cog):
             try:
                 layout = LayoutView()
                 container = Container(accent_color=None)
-                container.add_item(TextDisplay(f"📌 **Sticky Message**\n\n{text}"))
+                container.add_item(TextDisplay(text))
                 layout.add_item(container)
                 new_msg = await message.channel.send(view=layout)
                 
@@ -1643,9 +1643,16 @@ class StickyGroup(app_commands.Group, name="sticky"):
             except Exception:
                 pass
                 
-        builder = KINETICHOSTContainerBuilder("Sticky Message", None, accent_color=None)
-        builder.add_section("Notice", text)
-        new_msg = await interaction.channel.send(view=builder.build())
+        if not text or not text.strip():
+            err = create_error_section("Invalid Input", "Sticky message text cannot be empty.")
+            await interaction.followup.send(view=err, ephemeral=True)
+            return
+
+        layout = LayoutView()
+        container = Container(accent_color=None)
+        container.add_item(TextDisplay(text))
+        layout.add_item(container)
+        new_msg = await interaction.channel.send(view=layout)
         
         self.cog.sticky_last_ids[channel_id] = new_msg.id
         async with aiosqlite.connect(DB_PATH) as db:
